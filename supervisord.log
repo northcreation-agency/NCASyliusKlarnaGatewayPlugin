@@ -1,0 +1,31 @@
+2022-12-20 08:59:07,474 INFO Set uid to user 0 succeeded
+2022-12-20 08:59:07,479 INFO supervisord started with pid 1
+2022-12-20 08:59:08,492 INFO spawned: 'nginx' with pid 7
+2022-12-20 08:59:08,498 INFO spawned: 'php-fpm' with pid 8
+2022-12-20 08:59:09,659 INFO success: nginx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 08:59:09,660 INFO success: php-fpm entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 09:00:48,931 INFO reaped unknown pid 73 (exit status 0)
+2022-12-20 09:06:22,945 WARN received SIGTERM indicating exit request
+2022-12-20 09:06:22,949 INFO waiting for nginx, php-fpm to die
+2022-12-20 09:06:23,966 INFO stopped: php-fpm (exit status 0)
+2022-12-20 09:06:24,011 INFO stopped: nginx (exit status 0)
+2022-12-20 09:06:35,323 INFO Set uid to user 0 succeeded
+2022-12-20 09:06:35,326 INFO supervisord started with pid 1
+2022-12-20 09:06:36,328 INFO spawned: 'nginx' with pid 7
+2022-12-20 09:06:36,330 INFO spawned: 'php-fpm' with pid 8
+2022-12-20 09:06:37,365 INFO success: nginx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 09:06:37,365 INFO success: php-fpm entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 09:06:58,390 WARN received SIGTERM indicating exit request
+2022-12-20 09:06:58,391 INFO waiting for nginx, php-fpm to die
+2022-12-20 09:06:59,393 INFO stopped: php-fpm (exit status 0)
+2022-12-20 09:06:59,408 INFO stopped: nginx (exit status 0)
+2022-12-20 09:08:02,452 INFO Set uid to user 0 succeeded
+2022-12-20 09:08:02,454 INFO supervisord started with pid 1
+2022-12-20 09:08:03,456 INFO spawned: 'nginx' with pid 7
+2022-12-20 09:08:03,457 INFO spawned: 'php-fpm' with pid 8
+2022-12-20 09:08:04,493 INFO success: nginx entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 09:08:04,493 INFO success: php-fpm entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2022-12-20 09:08:13,503 WARN received SIGTERM indicating exit request
+2022-12-20 09:08:13,505 INFO waiting for nginx, php-fpm to die
+2022-12-20 09:08:14,509 INFO stopped: php-fpm (exit status 0)
+2022-12-20 09:08:14,522 INFO stopped: nginx (exit status 0)
