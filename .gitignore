@@ -1,5 +1,9 @@
 /vendor/
 /node_modules/
+
+# ignore symlinked node_modules
+node_modules
+
 /composer.lock
 
 /etc/build/*
