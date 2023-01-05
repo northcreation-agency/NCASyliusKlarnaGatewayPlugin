@@ -1,0 +1,4 @@
+sylius:
+    form:
+        gateway_configuration:
+            api_key: API Key
