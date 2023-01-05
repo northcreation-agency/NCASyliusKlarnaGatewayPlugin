@@ -1,4 +1,6 @@
 sylius:
     form:
         gateway_configuration:
-            api_key: API Key
+            api_key: 
+                label: API Key
+                help: API Key for your account. Supports loading env-variables via parameters with '%parameter_name%'.

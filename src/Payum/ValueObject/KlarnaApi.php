@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum;
+namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject;
 
 final class KlarnaApi
 {

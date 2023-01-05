@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Payum;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaApi;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory;
+use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use Payum\Core\Bridge\Spl\ArrayObject;
 use Payum\Core\GatewayFactoryInterface;
 use PHPUnit\Framework\Assert;

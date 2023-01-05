@@ -13,7 +13,8 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('api_key', TextType::class, [
-            'label' => 'sylius.form.gateway_configuration.api_key',
+            'label' => 'sylius.form.gateway_configuration.api_key.label',
+            'help' => 'sylius.form.gateway_configuration.api_key.help',
         ]);
     }
 }

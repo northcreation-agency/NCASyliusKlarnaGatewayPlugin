@@ -10,8 +10,8 @@ when@dev:
 
 when@test:
     web_profiler:
-        toolbar: false
-        intercept_redirects: false
+        toolbar: true
+        intercept_redirects: true
 
     framework:
         profiler: { collect: false }
