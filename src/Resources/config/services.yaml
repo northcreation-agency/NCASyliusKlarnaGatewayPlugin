@@ -1,0 +1,14 @@
+services:
+    anders_bjorkland_sylius_klarna_gateway.klarna_checkout:
+        class: Payum\Core\Bridge\Symfony\Builder\GatewayFactoryBuilder
+        arguments: ['AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory']
+        tags:
+            - { name: payum.gateway_factory_builder, factory: klarna_checkout }
+        
+    anders_bjorkland_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
+        class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type\KlarnaCheckoutGatewayConfigurationType
+        arguments: ['@sylius.repository.payment_method']
+        tags:
+            - { name: sylius.gateway_configuration_type, type: klarna_checkout, label: 'Klarna Checkout' }
+            - { name: form.type }
+    
