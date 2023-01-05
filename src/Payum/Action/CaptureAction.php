@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action;
 
+use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
+use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -34,6 +36,18 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         /** @var SyliusPaymentInterface $payment */
         $payment = $request->getModel();
 
+        $order = $payment->getOrder();
+
+        $requestStructure = new KlarnaRequestStructure(
+            $order,
+            new MerchantData('example.com', 'example.com', 'example.com', 'example.com')
+        );
+
+        try {
+            $requestStructureArray = $requestStructure->toArray();
+        } catch (\Exception $e) {
+        }
+
         $apiKey = $this->api->getApiKey();
         $klarnaUri = $this->parameterBag->get('sylius_klarna_gateway.checkout.uri');
 
@@ -44,11 +58,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
                 'POST',
                 $klarnaUri,
                 [
-                    'body' => json_encode([
-                        'price' => $payment->getAmount(),
-                        'currency' => $payment->getCurrencyCode(),
-                        'api_key' => $apiKey
-                    ]),
+                    'body' => json_encode($requestStructureArray),
                 ]
             );
         } catch (RequestException $e) {
