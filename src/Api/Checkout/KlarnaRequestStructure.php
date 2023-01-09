@@ -7,6 +7,7 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\OrderLine;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class KlarnaRequestStructure
 {
@@ -14,6 +15,7 @@ class KlarnaRequestStructure
     public function __construct(
         private OrderInterface $order,
         private MerchantData $merchantData,
+        private TaxRateResolverInterface $taxRateResolver,
     ){}
 
     /**
@@ -45,8 +47,10 @@ class KlarnaRequestStructure
     protected function getOrderLinesForOrder(OrderInterface $order): array
     {
         $orderLines = [];
+        $currentLocale = $order->getLocaleCode();
+
         foreach ($order->getItems() as $item) {
-            $orderLines[] = new OrderLine($item, 'physical');
+            $orderLines[] = new OrderLine($item, $this->taxRateResolver, 'physical', $currentLocale);
         }
         return $orderLines;
     }

@@ -11,7 +11,8 @@
 ## Documentation
 
 
-Following this tutorial: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html
+Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html
+And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout/get-started/
 
 For a comprehensive guide on Sylius Plugins development please go to Sylius documentation,
 there you will find the <a href="https://docs.sylius.com/en/latest/plugin-development-guide/index.html">Plugin Development Guide</a>, that is full of examples.

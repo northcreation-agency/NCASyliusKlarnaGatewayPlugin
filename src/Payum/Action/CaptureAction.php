@@ -14,7 +14,9 @@ use Payum\Core\ApiAwareInterface;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Exception\UnsupportedApiException;
 use Payum\Core\Request\Capture;
+use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
+use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class CaptureAction implements ActionInterface, ApiAwareInterface
@@ -24,7 +26,8 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
 
     public function __construct(
         private Client $client,
-        private ParameterBagInterface $parameterBag
+        private ParameterBagInterface $parameterBag,
+        private TaxRateResolverInterface $taxRateResolver,
     ){}
 
     public function execute($request): void
@@ -37,10 +40,12 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         $payment = $request->getModel();
 
         $order = $payment->getOrder();
+        assert($order instanceof OrderInterface);
 
         $requestStructure = new KlarnaRequestStructure(
-            $order,
-            new MerchantData('example.com', 'example.com', 'example.com', 'example.com')
+            order: $order,
+            merchantData:  new MerchantData('example.com', 'example.com', 'example.com', 'example.com'),
+            taxRateResolver: $this->taxRateResolver
         );
 
         try {
