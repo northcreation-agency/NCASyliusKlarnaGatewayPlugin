@@ -7,18 +7,8 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
-class OrderLine
+class OrderLine extends AbstractLineItem
 {
-    private string $type;
-    private string $reference;
-    private string $name;
-    private int $quantity;
-    private string $quantityUnit;
-    private int $unitPrice;
-    private int $taxRate;
-    private int $totalAmount;
-    private int $totalDiscountAmount;
-    private int $totalTaxAmount;
 
     /**
      * @throws \Exception
@@ -62,19 +52,8 @@ class OrderLine
         $this->totalTaxAmount = $orderItem->getTaxTotal();
     }
 
-    public function toArray(): array
+    public function getLineItem(): LineItemInterface
     {
-        return [
-            'type' => $this->type,
-            'reference' => $this->reference,
-            'name' => $this->name,
-            'quantity' => $this->quantity,
-            'quantity_unit' => $this->quantityUnit,
-            'unit_price' => $this->unitPrice,
-            'tax_rate' => $this->taxRate,
-            'total_amount' => $this->totalAmount,
-            'total_discount_amount' => $this->totalDiscountAmount,
-            'total_tax_amount' => $this->totalTaxAmount,
-        ];
+        return $this;
     }
 }

@@ -6,6 +6,7 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\OrderLine;
+use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\ShipmentLine;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
@@ -29,6 +30,12 @@ class KlarnaRequestStructure
             $orderLinesArray[] = $orderLine->toArray();
         }
 
+        $shipmentItems = $this->order->getShipments();
+        $shipmentItemOrderLines = [];
+        foreach ($shipmentItems as $shipmentItem) {
+            $shipmentItemOrderLines[] = '';
+        }
+
         return [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
@@ -48,10 +55,21 @@ class KlarnaRequestStructure
     {
         $orderLines = [];
         $currentLocale = $order->getLocaleCode();
+        assert($currentLocale !== null);
 
         foreach ($order->getItems() as $item) {
             $orderLines[] = new OrderLine($item, $this->taxRateResolver, 'physical', $currentLocale);
         }
         return $orderLines;
+    }
+
+    protected function createShipmentLinesForOrder(OrderInterface $order): array
+    {
+        $shipmentLines = [];
+
+        foreach ($order->getShipments() as $shipment) {
+            $shipmentLines[] = new ShipmentLine($shipment, $this->taxRateResolver);
+        }
+        return $shipmentLines;
     }
 }

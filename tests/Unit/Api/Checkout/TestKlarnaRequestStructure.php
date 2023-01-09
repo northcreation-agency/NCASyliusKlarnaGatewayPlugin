@@ -65,6 +65,18 @@ class TestKlarnaRequestStructure extends TestCase
                           "total_amount" => 50000,
                           "total_discount_amount" => 0,
                           "total_tax_amount" => 4545
+                      ],
+                      [
+                            "type" => "service",
+                            "reference" => "shipment_1",
+                            "name" => "Shipping",
+                            "quantity" => 1,
+                            "quantity_unit" => "pcs",
+                            "unit_price" => 20000,
+                            "tax_rate" => 1000,
+                            "total_amount" => 20000,
+                            "total_discount_amount" => 0,
+                            "total_tax_amount" => 1818
                       ]
                 ],
                     "merchant_urls" => [
