@@ -14,7 +14,7 @@ final class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('anders_bjorkland_sylius_klarna_gateway');
+        $treeBuilder = new TreeBuilder('anders_bjorkland_sylius_klarna_gateway_plugin');
         $rootNode = $treeBuilder->getRootNode();
 
         return $treeBuilder;
