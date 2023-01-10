@@ -10,7 +10,7 @@
 
 ## Documentation
 
-
+Official Plugin guide: https://docs.sylius.com/en/latest/book/plugins/guide/index.html
 Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html
 And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout/get-started/
 
