@@ -54,7 +54,7 @@ class ShipmentLineTest extends TestCase
         try {
             $shipmentLine = new ShipmentLine($this->shipment);
         } catch (\Exception $e) {
-            $this->fail($e->getMessage());
+            Assert::fail($e->getMessage());
         }
 
         $expectedArray = [
@@ -73,6 +73,5 @@ class ShipmentLineTest extends TestCase
         $actualArray = $shipmentLine->toArray();
 
         Assert::assertEquals($expectedArray, $actualArray);
-
     }
 }

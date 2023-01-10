@@ -30,10 +30,9 @@ class KlarnaRequestStructure
             $orderLinesArray[] = $orderLine->toArray();
         }
 
-        $shipmentItems = $this->order->getShipments();
-        $shipmentItemOrderLines = [];
-        foreach ($shipmentItems as $shipmentItem) {
-            $shipmentItemOrderLines[] = '';
+        $shipmentLines = $this->getShipmentLinesForOrder($this->order);
+        foreach ($shipmentLines as $shipmentLine) {
+            $orderLinesArray[] = $shipmentLine->toArray();
         }
 
         return [
@@ -63,7 +62,10 @@ class KlarnaRequestStructure
         return $orderLines;
     }
 
-    protected function createShipmentLinesForOrder(OrderInterface $order): array
+    /**
+     * @throws \Exception
+     */
+    protected function getShipmentLinesForOrder(OrderInterface $order): array
     {
         $shipmentLines = [];
 

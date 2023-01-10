@@ -9,6 +9,7 @@ use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\Address;
 use Sylius\Component\Core\Model\Channel;
@@ -19,12 +20,15 @@ use Sylius\Component\Core\Model\OrderItem;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductTranslation;
 use Sylius\Component\Core\Model\ProductVariant;
+use Sylius\Component\Core\Model\Shipment;
+use Sylius\Component\Core\Model\ShipmentInterface;
+use Sylius\Component\Core\Model\ShippingMethod;
 use Sylius\Component\Core\Model\TaxRate;
 use Sylius\Component\Product\Model\ProductVariantTranslation;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
-class TestKlarnaRequestStructure extends TestCase
+class KlarnaRequestStructureTest extends TestCase
 {
     private OrderInterface $order;
     private MerchantData $merchantData;
@@ -38,8 +42,7 @@ class TestKlarnaRequestStructure extends TestCase
         $taxRateMock = $this->createMock(TaxRate::class);
         $taxRateMock->method('getAmount')->willReturn(0.1);
 
-        $taxRateResolver = $this->createMock(TaxRateResolverInterface
-        ::class);
+        $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
         $this->klarnaRequestStructure = new KlarnaRequestStructure($this->order, $this->merchantData, $taxRateResolver);
     }
@@ -67,16 +70,16 @@ class TestKlarnaRequestStructure extends TestCase
                           "total_tax_amount" => 4545
                       ],
                       [
-                            "type" => "service",
-                            "reference" => "shipment_1",
-                            "name" => "Shipping",
-                            "quantity" => 1,
-                            "quantity_unit" => "pcs",
-                            "unit_price" => 20000,
-                            "tax_rate" => 1000,
-                            "total_amount" => 20000,
-                            "total_discount_amount" => 0,
-                            "total_tax_amount" => 1818
+                          'type' => 'shipping_fee',
+                          'reference' => 'test',
+                          'name' => 'test',
+                          'quantity' => 1,
+                          'quantity_unit' => 'pcs',
+                          'unit_price' => 10000,
+                          'tax_rate' => 1000,
+                          'total_amount' => 1000,
+                          'total_discount_amount' => 0,
+                          'total_tax_amount' => 100,
                       ]
                 ],
                     "merchant_urls" => [
@@ -91,6 +94,7 @@ class TestKlarnaRequestStructure extends TestCase
 
         Assert::assertEquals($expectedStructure, $actualStructure);
     }
+
 
     protected function createOrder(): Order
     {
@@ -123,6 +127,9 @@ class TestKlarnaRequestStructure extends TestCase
         $order->method('getItems')
             ->willReturn($this->createOrderItems());
 
+        $order->method('getShipments')
+            ->willReturn($this->createShipments());
+
 
         return $order;
     }
@@ -138,7 +145,7 @@ class TestKlarnaRequestStructure extends TestCase
     }
 
     /**
-     * @psalm-return  Collection<array-key, OrderItem>
+     * @psalm-return  Collection<array-key, MockObject&OrderItem>
      * return Collection|OrderItemInterface[]
      */
     protected function createOrderItems(): Collection
@@ -215,5 +222,36 @@ class TestKlarnaRequestStructure extends TestCase
         $taxCategory->addRate($taxRate);
 
         return $taxCategory;
+    }
+
+    private function createShipments(): Collection
+    {
+        $taxRate = $this->createMock(TaxRate::class);
+        $taxRate->method('getAmount')->willReturn(0.1);
+
+        $taxCategory = $this->createMock(TaxCategory::class);
+        $ratesCollection = new ArrayCollection([$taxRate]);
+        $taxCategory->method('getRates')->willReturn($ratesCollection);
+
+        $order = $this->createMock(Order::class);
+        $order->method('getShippingTotal')->willReturn(1000);
+        $order->method('getAdjustmentsTotalRecursively')
+            ->with('shipping_tax')
+            ->willReturn(10);
+
+        $shippingMethod = new ShippingMethod();
+        $shippingMethod->setCurrentLocale('en');
+        $shippingMethod->setName('test');
+        $shippingMethod->setCode('test');
+        $shippingMethod->setTaxCategory($taxCategory);
+        $shippingMethod->setCalculator('default');
+
+        $shipment = $this->createMock(ShipmentInterface::class);
+        $shipment->method('getMethod')->willReturn($shippingMethod);
+        $shipment->method('getOrder')->willReturn($order);
+        $shipment->method('getShippingUnitCount')->willReturn(1);
+        $shipment->method('getShippingUnitTotal')->willReturn(10000);
+
+        return new ArrayCollection([$shipment]);
     }
 }
