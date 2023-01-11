@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
+namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 abstract class AbstractLineItem implements LineItemInterface
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action;
 
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
+use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

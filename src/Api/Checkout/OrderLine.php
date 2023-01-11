@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
+namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;

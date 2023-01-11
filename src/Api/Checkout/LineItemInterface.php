@@ -1,6 +1,6 @@
 <?php
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
+namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 interface LineItemInterface
 {

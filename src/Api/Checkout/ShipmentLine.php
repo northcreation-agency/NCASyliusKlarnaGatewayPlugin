@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
+namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\AdjustmentInterface;
-use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
-use Sylius\Component\Core\OrderProcessing\ShippingChargesProcessor;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Model\TaxableInterface;
 
 class ShipmentLine extends AbstractLineItem
 {

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\OrderLine;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\ShipmentLine;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
