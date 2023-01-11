@@ -12,7 +12,8 @@ Official API documentation: https://docs.klarna.com/api/checkout/
 Payum documentation for encrypting gateway configuration: https://github.com/Payum/Payum/blob/master/docs/symfony/encrypt-gateway-configs-stored-in-database.md  
 
 ## Credentials encryption
-Makes use of `defuse/php-encryption` to encrypt the credentials.
+Makes use of `defuse/php-encryption` to encrypt the credentials. 
+This in turn requires `ext-openssl` to be installed on the server.
 
 ## Klarna Checkout API  
 The test-url for the api is accessed via: https://beeceptor.com/console/klarna  
