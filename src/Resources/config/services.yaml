@@ -1,6 +1,8 @@
 parameters:
     sylius_klarna_gateway.checkout.klarna_secret: '%env(KLARNA_SECRET)%'
     sylius_klarna_gateway.checkout.uri: '%env(KLARNA_CHECKOUT_URI)%'
+    sylius_klarna_gateway.api.username: '%env(KLARNA_USERNAME)%'
+    sylius_klarna_gateway.api.password: '%env(KLARNA_PASSWORD)%'
     
 services:
     anders_bjorkland_sylius_klarna_gateway_plugin.klarna_checkout:

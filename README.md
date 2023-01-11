@@ -14,6 +14,14 @@ The test-url for the api is accessed via: https://beeceptor.com/console/klarna
 ## Klarna Checkout API
 Official API documentation: https://docs.klarna.com/api/checkout/
 
+### Recommended ENV variables
+```ENV
+KLARNA_SECRET=test_secret_key
+KLARNA_CHECKOUT_URI=https://klarna.free.beeceptor.com/checkout
+KLARNA_USERNAME=test_username
+KLARNA_PASSWORD=test_password
+```
+
 ### Additional parameter explanation
 *When not covered by official documentation*  
 In general, all `amount`-parameters are in cents or equivalent. `2000`: EUR 20.00  
