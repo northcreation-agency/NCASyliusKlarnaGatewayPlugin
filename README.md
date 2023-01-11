@@ -5,17 +5,21 @@
 
 ## Documentation
 
-Official Plugin guide: https://docs.sylius.com/en/latest/book/plugins/guide/index.html
-Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html
-And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout/get-started/
+Official Plugin guide: https://docs.sylius.com/en/latest/book/plugins/guide/index.html  
+Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html  
+And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout/get-started/  
+Official API documentation: https://docs.klarna.com/api/checkout/  
+Payum documentation for encrypting gateway configuration: https://github.com/Payum/Payum/blob/master/docs/symfony/encrypt-gateway-configs-stored-in-database.md  
 
-The test-url for the api is accessed via: https://beeceptor.com/console/klarna
+## Credentials encryption
+Makes use of `defuse/php-encryption` to encrypt the credentials.
 
-## Klarna Checkout API
-Official API documentation: https://docs.klarna.com/api/checkout/
+## Klarna Checkout API  
+The test-url for the api is accessed via: https://beeceptor.com/console/klarna  
 
 ### Recommended ENV variables
 ```ENV
+PAYUM_CYPHER_KEY=OUTPUT_OF_vendor/bin/defuse-generate-key
 KLARNA_SECRET=test_secret_key
 KLARNA_CHECKOUT_URI=https://klarna.free.beeceptor.com/checkout
 KLARNA_USERNAME=test_username
