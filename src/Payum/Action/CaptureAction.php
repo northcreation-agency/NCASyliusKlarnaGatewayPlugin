@@ -51,17 +51,15 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
             shippingChargesProcessor: $this->shippingChargesProcessor
         );
 
-        try {
-            $requestStructureArray = $requestStructure->toArray();
-        } catch (\Exception $e) {
-        }
-
-        $apiKey = $this->api->getApiKey();
-        $klarnaUri = $this->parameterBag->get('sylius_klarna_gateway.checkout.uri');
+        $klarnaUri = $this->parameterBag->get('anders_bjorkland_sylius_klarna_gateway.checkout.uri');
 
         assert(is_string($klarnaUri));
 
+        $response = null;
+
         try {
+            $requestStructureArray = $requestStructure->toArray();
+
             $response = $this->client->request(
                 'POST',
                 $klarnaUri,
@@ -74,7 +72,13 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         } catch (\Exception $e) {
             $response = 500;
         } finally {
-            $payment->setDetails(['status' => $response?->getStatusCode() ?? 400]);
+            if ($response instanceof \Psr\Http\Message\ResponseInterface) {
+                $responseCode = $response->getStatusCode();
+            } else {
+                $responseCode = 500;
+            }
+
+            $payment->setDetails(['status' => $responseCode]);
         }
     }
 

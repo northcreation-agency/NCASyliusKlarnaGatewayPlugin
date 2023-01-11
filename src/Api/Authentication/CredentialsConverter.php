@@ -17,8 +17,8 @@ class CredentialsConverter
      */
     public function toBase64(): string
     {
-        $userName = $this->parameterBag->get('klarna_gateway.username');
-        $password = $this->parameterBag->get('klarna_gateway.password');
+        $userName = $this->parameterBag->get('anders_bjorkland_sylius_klarna_gateway.api.username');
+        $password = $this->parameterBag->get('anders_bjorkland_sylius_klarna_gateway.api.password');
 
         if (!is_string($userName) || !is_string($password)) {
             throw new \Exception('Klarna username or password is missing');

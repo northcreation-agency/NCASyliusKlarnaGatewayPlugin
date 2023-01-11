@@ -1,24 +1,24 @@
 parameters:
-    sylius_klarna_gateway.checkout.klarna_secret: '%env(KLARNA_SECRET)%'
-    sylius_klarna_gateway.checkout.uri: '%env(KLARNA_CHECKOUT_URI)%'
-    sylius_klarna_gateway.api.username: '%env(KLARNA_USERNAME)%'
-    sylius_klarna_gateway.api.password: '%env(KLARNA_PASSWORD)%'
+    anders_bjorkland_sylius_klarna_gateway.checkout.klarna_secret: '%env(KLARNA_SECRET)%'
+    anders_bjorkland_sylius_klarna_gateway.checkout.uri: '%env(KLARNA_CHECKOUT_URI)%'
+    anders_bjorkland_sylius_klarna_gateway.api.username: '%env(KLARNA_USERNAME)%'
+    anders_bjorkland_sylius_klarna_gateway.api.password: '%env(KLARNA_PASSWORD)%'
     
 services:
-    anders_bjorkland_sylius_klarna_gateway_plugin.klarna_checkout:
+    anders_bjorkland_sylius_klarna_gateway.klarna_checkout:
         class: Payum\Core\Bridge\Symfony\Builder\GatewayFactoryBuilder
         arguments: ['AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory']
         tags:
             - { name: payum.gateway_factory_builder, factory: klarna_checkout }
         
-    anders_bjorkland_sylius_klarna_gateway_plugin.form.type.klarna_checkout_gateway_configuration:
+    anders_bjorkland_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
         class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type\KlarnaCheckoutGatewayConfigurationType
         arguments: ['@sylius.repository.payment_method']
         tags:
             - { name: sylius.gateway_configuration_type, type: klarna_checkout, label: 'Klarna Checkout' }
             - { name: form.type }
     
-    anders_bjorkland_sylius_klarna_gateway_plugin.actions.capture:
+    anders_bjorkland_sylius_klarna_gateway.actions.capture:
         class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action\CaptureAction
         public: true
         arguments: [
