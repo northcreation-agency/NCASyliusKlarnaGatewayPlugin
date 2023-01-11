@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api;
 
+use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
+use Sylius\Component\Core\OrderProcessing\ShippingChargesProcessor;
+use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Model\TaxableInterface;
 
 class ShipmentLine extends AbstractLineItem
@@ -15,6 +18,7 @@ class ShipmentLine extends AbstractLineItem
      */
     public function __construct(
         ShipmentInterface $shipment,
+        OrderProcessorInterface $shippingChargesProcessor,
     ){
         $shippingMethod = $shipment->getMethod();
         if ($shippingMethod === null) {
@@ -32,9 +36,27 @@ class ShipmentLine extends AbstractLineItem
             throw new \Exception('Shipment must have an order');
         }
 
-        $shippingCalculator = $shippingMethod->getCalculator();
-        if ($shippingCalculator === null) {
-            throw new \Exception('Shipment method must have a calculator');
+        $shippingChargesProcessor->process($order);
+
+        $shippingCharge = 0;
+        $shippingAdjustments = $shipment->getAdjustments(AdjustmentInterface::SHIPPING_ADJUSTMENT);
+
+        foreach ($shippingAdjustments as $adjustment) {
+            $shippingCharge += $adjustment->getAmount();
+        }
+
+        $shippingTaxTotal = 0;
+        $shippingTaxAdjustments = $shipment->getAdjustments(AdjustmentInterface::TAX_ADJUSTMENT);
+        $shippingTaxRate = 0;
+
+        foreach ($shippingTaxAdjustments as $adjustment) {
+            $shippingTaxTotal += $adjustment->getAmount();
+            $details = $adjustment->getDetails();
+            if (isset($details['taxRateAmount']) && is_numeric($details['taxRateAmount'])) {
+                $shippingTaxRate = (int)($details['taxRateAmount'] * 100 * 100);
+            } else {
+                throw new \Exception('Shipping tax adjustment must have a tax rate amount');
+            }
         }
 
         $this->type = 'shipping_fee';
@@ -43,11 +65,10 @@ class ShipmentLine extends AbstractLineItem
         $this->quantity = $shipment->getShippingUnitCount();
         $this->quantityUnit = 'pcs';
         $this->unitPrice = $shipment->getShippingUnitTotal();
-        $shippingTaxRate = $order->getAdjustmentsTotalRecursively('shipping_tax');
-        $this->taxRate = $shippingTaxRate * 100;
-        $this->totalAmount = $order->getShippingTotal();
+        $this->taxRate = $shippingTaxRate;
+        $this->totalAmount = $shippingCharge;
         $this->totalDiscountAmount = 0;
-        $this->totalTaxAmount = (int)(($shippingTaxRate / 100) * $this->totalAmount);
+        $this->totalTaxAmount = $shippingTaxTotal;
     }
 
     public function getLineItem(): LineItemInterface

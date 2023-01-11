@@ -12,6 +12,8 @@ use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\Address;
+use Sylius\Component\Core\Model\Adjustment;
+use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelPricing;
 use Sylius\Component\Core\Model\Order;
@@ -24,6 +26,7 @@ use Sylius\Component\Core\Model\Shipment;
 use Sylius\Component\Core\Model\ShipmentInterface;
 use Sylius\Component\Core\Model\ShippingMethod;
 use Sylius\Component\Core\Model\TaxRate;
+use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Product\Model\ProductVariantTranslation;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
@@ -44,7 +47,13 @@ class KlarnaRequestStructureTest extends TestCase
 
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
-        $this->klarnaRequestStructure = new KlarnaRequestStructure($this->order, $this->merchantData, $taxRateResolver);
+
+        $this->klarnaRequestStructure = new KlarnaRequestStructure(
+            $this->order,
+            $this->merchantData,
+            $taxRateResolver,
+            $this->createMock(OrderProcessorInterface::class)
+        );
     }
 
     public function testToArrayHasKlarnaRequestStructure(): void
@@ -75,11 +84,11 @@ class KlarnaRequestStructureTest extends TestCase
                           'name' => 'test',
                           'quantity' => 1,
                           'quantity_unit' => 'pcs',
-                          'unit_price' => 10000,
+                          'unit_price' => 11000,
                           'tax_rate' => 1000,
-                          'total_amount' => 1000,
+                          'total_amount' => 11000,
                           'total_discount_amount' => 0,
-                          'total_tax_amount' => 100,
+                          'total_tax_amount' => 1000,
                       ]
                 ],
                     "merchant_urls" => [
@@ -234,7 +243,7 @@ class KlarnaRequestStructureTest extends TestCase
         $taxCategory->method('getRates')->willReturn($ratesCollection);
 
         $order = $this->createMock(Order::class);
-        $order->method('getShippingTotal')->willReturn(1000);
+        $order->method('getShippingTotal')->willReturn(11000);
         $order->method('getAdjustmentsTotalRecursively')
             ->with('shipping_tax')
             ->willReturn(10);
@@ -250,7 +259,25 @@ class KlarnaRequestStructureTest extends TestCase
         $shipment->method('getMethod')->willReturn($shippingMethod);
         $shipment->method('getOrder')->willReturn($order);
         $shipment->method('getShippingUnitCount')->willReturn(1);
-        $shipment->method('getShippingUnitTotal')->willReturn(10000);
+        $shipment->method('getShippingUnitTotal')->willReturn(11000);
+
+        $shippingAdjustment = new Adjustment();
+        $shippingAdjustment->setType(AdjustmentInterface::SHIPPING_ADJUSTMENT);
+        $baseCost = 10000;
+        $tax = 1000;
+        $shippingAdjustment->setAmount($baseCost + $tax);
+
+        $shippingTaxAdjustment = new Adjustment();
+        $shippingTaxAdjustment->setType(AdjustmentInterface::TAX_ADJUSTMENT);
+        $shippingTaxAdjustment->setAmount($tax);
+        $shippingTaxAdjustment->setDetails(['taxRateAmount' => 0.1]);
+
+        $shipment
+            ->method('getAdjustments')
+            ->willReturnOnConsecutiveCalls(
+                (new ArrayCollection([$shippingAdjustment])),
+                (new ArrayCollection([$shippingTaxAdjustment]))
+            );
 
         return new ArrayCollection([$shipment]);
     }

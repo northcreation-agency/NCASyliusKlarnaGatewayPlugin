@@ -19,6 +19,11 @@ services:
     anders_bjorkland_sylius_klarna_gateway_plugin.actions.capture:
         class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action\CaptureAction
         public: true
-        arguments: ['@sylius.http_client', '@parameter_bag', '@sylius.tax_rate_resolver']
+        arguments: [
+            '@sylius.http_client', 
+            '@parameter_bag', 
+            '@sylius.tax_rate_resolver', 
+            '@sylius.order_processing.shipping_charges_processor'
+        ]
         tags:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }

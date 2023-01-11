@@ -8,10 +8,13 @@ use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\ShipmentLine;
 use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
+use Sylius\Component\Core\Model\Adjustment;
+use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\Order;
 use Sylius\Component\Core\Model\ShipmentInterface;
 use Sylius\Component\Core\Model\ShippingMethod;
 use Sylius\Component\Core\Model\TaxRate;
+use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Model\TaxCategory;
 
 class ShipmentLineTest extends TestCase
@@ -31,7 +34,7 @@ class ShipmentLineTest extends TestCase
         $order->method('getShippingTotal')->willReturn(1000);
         $order->method('getAdjustmentsTotalRecursively')
             ->with('shipping_tax')
-            ->willReturn(10);
+            ->willReturn(100);
 
         $shippingMethod = new ShippingMethod();
         $shippingMethod->setCurrentLocale('en');
@@ -44,18 +47,35 @@ class ShipmentLineTest extends TestCase
         $shipment->method('getMethod')->willReturn($shippingMethod);
         $shipment->method('getOrder')->willReturn($order);
         $shipment->method('getShippingUnitCount')->willReturn(1);
-        $shipment->method('getShippingUnitTotal')->willReturn(10000);
+        $shipment->method('getShippingUnitTotal')->willReturn(11000);
+
+        $shippingAdjustment = new Adjustment();
+        $shippingAdjustment->setType(AdjustmentInterface::SHIPPING_ADJUSTMENT);
+        $baseCost = 10000;
+        $tax = 1000;
+        $shippingAdjustment->setAmount($baseCost + $tax);
+
+        $shippingTaxAdjustment = new Adjustment();
+        $shippingTaxAdjustment->setType(AdjustmentInterface::TAX_ADJUSTMENT);
+        $shippingTaxAdjustment->setAmount($tax);
+        $shippingTaxAdjustment->setDetails(['taxRateAmount' => 0.1]);
+
+        $shipment
+            ->method('getAdjustments')
+            ->willReturnOnConsecutiveCalls(
+                (new ArrayCollection([$shippingAdjustment])),
+                (new ArrayCollection([$shippingTaxAdjustment]))
+            );
 
         $this->shipment = $shipment;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testShipmentLineToArray(): void
     {
-        try {
-            $shipmentLine = new ShipmentLine($this->shipment);
-        } catch (\Exception $e) {
-            Assert::fail($e->getMessage());
-        }
+        $shipmentLine = new ShipmentLine($this->shipment, $this->createMock(OrderProcessorInterface::class));
 
         $expectedArray = [
             'type' => 'shipping_fee',
@@ -63,11 +83,11 @@ class ShipmentLineTest extends TestCase
             'name' => 'test',
             'quantity' => 1,
             'quantity_unit' => 'pcs',
-            'unit_price' => 10000,
+            'unit_price' => 11000,
             'tax_rate' => 1000,
-            'total_amount' => 1000,
+            'total_amount' => 11000,
             'total_discount_amount' => 0,
-            'total_tax_amount' => 100,
+            'total_tax_amount' => 1000,
         ];
 
         $actualArray = $shipmentLine->toArray();

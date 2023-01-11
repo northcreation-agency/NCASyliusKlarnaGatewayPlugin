@@ -8,6 +8,7 @@ use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\OrderLine;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\ShipmentLine;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class KlarnaRequestStructure
@@ -17,6 +18,7 @@ class KlarnaRequestStructure
         private OrderInterface $order,
         private MerchantData $merchantData,
         private TaxRateResolverInterface $taxRateResolver,
+        private OrderProcessorInterface $shippingChargesProcessor,
     ){}
 
     /**
@@ -70,7 +72,7 @@ class KlarnaRequestStructure
         $shipmentLines = [];
 
         foreach ($order->getShipments() as $shipment) {
-            $shipmentLines[] = new ShipmentLine($shipment, $this->taxRateResolver);
+            $shipmentLines[] = new ShipmentLine($shipment, $this->shippingChargesProcessor);
         }
         return $shipmentLines;
     }
