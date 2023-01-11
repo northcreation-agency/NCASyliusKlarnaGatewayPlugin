@@ -1,12 +1,7 @@
-<p align="center">
-    <a href="https://sylius.com" target="_blank">
-        <img src="https://demo.sylius.com/assets/shop/img/logo.png" />
-    </a>
-</p>
 
-<h1 align="center">Plugin Skeleton</h1>
+<h1 align="center">Sylius Klarna Gateway Plugin</h1>
 
-<p align="center">Skeleton for starting Sylius plugins.</p>
+<p align="center">Headless checkout</p>
 
 ## Documentation
 
@@ -14,35 +9,37 @@ Official Plugin guide: https://docs.sylius.com/en/latest/book/plugins/guide/inde
 Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html
 And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout/get-started/
 
-For a comprehensive guide on Sylius Plugins development please go to Sylius documentation,
-there you will find the <a href="https://docs.sylius.com/en/latest/plugin-development-guide/index.html">Plugin Development Guide</a>, that is full of examples.
+The test-url for the api is accessed via: https://beeceptor.com/console/klarna
 
-## Quickstart Installation
+## Klarna Checkout API
+Official API documentation: https://docs.klarna.com/api/checkout/
 
-### Traditional
+### Additional parameter explanation
+*When not covered by official documentation*  
+In general, all `amount`-parameters are in cents or equivalent. `2000`: EUR 20.00  
+`tax-rate` is a percentage value. `25`: 25% = 25/100 = 0.25  
+`order-amount` is the total amount of the order, including tax.
 
-1. Run `composer create-project sylius/plugin-skeleton ProjectName`.
+## Quickstart Development
 
-2. From the plugin skeleton root directory, run the following commands:
+1. Git clone project.
+
+2. From the project root directory, run the following commands:
 
     ```bash
+    $ docker-compose up -d
+    $ composer install
     $ (cd tests/Application && yarn install)
     $ (cd tests/Application && yarn build)
     $ (cd tests/Application && APP_ENV=test bin/console assets:install public)
     
     $ (cd tests/Application && APP_ENV=test bin/console doctrine:database:create)
     $ (cd tests/Application && APP_ENV=test bin/console doctrine:schema:create)
+    $ (cd tests/Application && APP_ENV=test bin/console sylius:fixtures:load)
+    $ (cd tests/Application && APP_ENV=test symfony serve -d)
     ```
-
-To be able to set up a plugin's database, remember to configure you database credentials in `tests/Application/.env` and `tests/Application/.env.test`.
-
-### Docker
-
-1. Execute `docker compose up -d`
-
-2. Initialize plugin `docker compose exec app make init`
-
-3. See your browser `open localhost`
+   > Note: If you do not have Symfony CLI installed, you can use the php built-in server instead:  
+   > `php -S localhost:8000 -t public`
 
 ## Usage
 
@@ -72,22 +69,22 @@ To be able to set up a plugin's database, remember to configure you database cre
  
     2. Start Headless Chrome:
     
-      ```bash
-      google-chrome-stable --enable-automation --disable-background-networking --no-default-browser-check --no-first-run --disable-popup-blocking --disable-default-apps --allow-insecure-localhost --disable-translate --disable-extensions --no-sandbox --enable-features=Metal --headless --remote-debugging-port=9222 --window-size=2880,1800 --proxy-server='direct://' --proxy-bypass-list='*' http://127.0.0.1
-      ```
+         ```bash
+         google-chrome-stable --enable-automation --disable-background-networking --no-default-browser-check --no-first-run --disable-popup-blocking --disable-default-apps --allow-insecure-localhost --disable-translate --disable-extensions --no-sandbox --enable-features=Metal --headless --remote-debugging-port=9222 --window-size=2880,1800 --proxy-server='direct://' --proxy-bypass-list='*' http://127.0.0.1
+         ```
     
     3. Install SSL certificates (only once needed) and run test application's webserver on `127.0.0.1:8080`:
     
-      ```bash
-      symfony server:ca:install
-      APP_ENV=test symfony server:start --port=8080 --dir=tests/Application/public --daemon
-      ```
+         ```bash
+         symfony server:ca:install
+         APP_ENV=test symfony server:start --port=8080 --dir=tests/Application/public --daemon
+         ```
     
     4. Run Behat:
     
-      ```bash
-      vendor/bin/behat --strict --tags="@javascript"
-      ```
+         ```bash
+         vendor/bin/behat --strict --tags="@javascript"
+         ```
     
   - Static Analysis
   
