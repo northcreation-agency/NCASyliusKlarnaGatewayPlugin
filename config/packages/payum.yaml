@@ -15,3 +15,7 @@ payum:
     gateways:
         offline:
             factory: offline
+
+    dynamic_gateways:
+        encryption:
+            defuse_secret_key: '%env(PAYUM_CYPHER_KEY)%'

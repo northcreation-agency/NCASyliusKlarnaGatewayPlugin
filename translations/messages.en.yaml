@@ -1,6 +1,9 @@
-sylius:
+ncagency:
     form:
         gateway_configuration:
-            api_key: 
-                label: API Key
-                help: API Key for your account. Supports loading env-variables via parameters with '%parameter_name%'.
+            api_user:
+                label: API User
+                help: The API user to use for the payment gateway. It will be encrypted before being stored in the database.
+            api_password:
+                label: API Password
+                help: The password is not stored in plain text. It will be encrypted before being stored in the database.
