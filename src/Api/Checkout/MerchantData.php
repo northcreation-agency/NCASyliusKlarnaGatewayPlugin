@@ -6,14 +6,13 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 class MerchantData
 {
-
-
     public function __construct(
         private string $termsUrl,
         private string $checkoutUrl,
         private string $confirmationUrl,
         private string $pushUrl,
-    ){}
+    ) {
+    }
 
     public function toArray(): array
     {

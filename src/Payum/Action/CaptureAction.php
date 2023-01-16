@@ -22,15 +22,16 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class CaptureAction implements ActionInterface, ApiAwareInterface
 {
-
-    private KlarnaApi $api;
+    private ?KlarnaApi $api;
 
     public function __construct(
         private Client $client,
         private ParameterBagInterface $parameterBag,
         private TaxRateResolverInterface $taxRateResolver,
-        private OrderProcessorInterface $shippingChargesProcessor
-    ){}
+        private OrderProcessorInterface $shippingChargesProcessor,
+    ) {
+        $this->api = null;
+    }
 
     public function execute($request): void
     {
@@ -48,9 +49,10 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
             order: $order,
             merchantData:  new MerchantData('example.com', 'example.com', 'example.com', 'example.com'),
             taxRateResolver: $this->taxRateResolver,
-            shippingChargesProcessor: $this->shippingChargesProcessor
+            shippingChargesProcessor: $this->shippingChargesProcessor,
         );
 
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
         $klarnaUri = $this->parameterBag->get('anders_bjorkland_sylius_klarna_gateway.checkout.uri');
 
         assert(is_string($klarnaUri));
@@ -65,7 +67,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
                 $klarnaUri,
                 [
                     'body' => json_encode($requestStructureArray),
-                ]
+                ],
             );
         } catch (RequestException $e) {
             $response = $e->getResponse();
@@ -94,5 +96,10 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         }
 
         $this->api = $api;
+    }
+
+    public function getApi(): ?KlarnaApi
+    {
+        return $this->api;
     }
 }

@@ -16,7 +16,7 @@ class ShipmentLine extends AbstractLineItem
     public function __construct(
         ShipmentInterface $shipment,
         OrderProcessorInterface $shippingChargesProcessor,
-    ){
+    ) {
         $shippingMethod = $shipment->getMethod();
         if ($shippingMethod === null) {
             throw new \Exception('Shipment method not set');
@@ -50,7 +50,7 @@ class ShipmentLine extends AbstractLineItem
             $shippingTaxTotal += $adjustment->getAmount();
             $details = $adjustment->getDetails();
             if (isset($details['taxRateAmount']) && is_numeric($details['taxRateAmount'])) {
-                $shippingTaxRate = (int)($details['taxRateAmount'] * 100 * 100);
+                $shippingTaxRate = (int) ($details['taxRateAmount'] * 100 * 100);
             } else {
                 throw new \Exception('Shipping tax adjustment must have a tax rate amount');
             }

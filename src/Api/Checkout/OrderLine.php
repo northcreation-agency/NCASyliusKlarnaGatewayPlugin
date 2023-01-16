@@ -9,7 +9,6 @@ use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class OrderLine extends AbstractLineItem
 {
-
     /**
      * @throws \Exception
      */
@@ -18,7 +17,7 @@ class OrderLine extends AbstractLineItem
         TaxRateResolverInterface $taxRateResolver,
         string $type = 'physical',
         string $locale = 'en_US',
-    ){
+    ) {
         $variant = $orderItem->getVariant();
         if ($variant === null) {
             throw new \Exception('Order item must have a variant');
@@ -29,7 +28,6 @@ class OrderLine extends AbstractLineItem
         if ($variantCode === null) {
             throw new \Exception('Variant must have a code');
         }
-
 
         $orderName = $orderItem->getProductName();
         $variantName = $orderItem->getVariantName();
@@ -46,7 +44,7 @@ class OrderLine extends AbstractLineItem
         $this->quantity = $orderItem->getQuantity();
         $this->quantityUnit = 'pcs';
         $this->unitPrice = $orderItem->getUnitPrice();
-        $this->taxRate = (int)($taxRateFloat * 100 * 100);
+        $this->taxRate = (int) ($taxRateFloat * 100 * 100);
         $this->totalAmount = $orderItem->getTotal();
         $this->totalDiscountAmount = $orderItem->getTotal() - $orderItem->getDiscountedUnitPrice();
         $this->totalTaxAmount = $orderItem->getTaxTotal();

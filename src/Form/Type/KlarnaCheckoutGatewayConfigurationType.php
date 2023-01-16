@@ -15,23 +15,22 @@ use Symfony\Component\Form\FormEvents;
 class KlarnaCheckoutGatewayConfigurationType extends AbstractType
 {
     public const API_USERNAME = 'api_username';
+
     public const API_PASSWORD = 'api_password';
 
+    /** @var string[] */
     private array $encryptedFields = [
         self::API_USERNAME,
         self::API_PASSWORD,
     ];
 
     public function __construct(
-        private ?CypherInterface $cypher
-    ){}
+        private CypherInterface $cypher,
+    ) {
+    }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        if ($this->cypher === null) {
-            return;
-        }
-
         $builder
             // decrypt the gateway config
             ->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) {
@@ -39,6 +38,8 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
 
                 foreach ($this->encryptedFields as $encryptedField) {
                     if ($this->isDecipherable($encryptedField, $data)) {
+                        assert(is_array($data));
+                        assert(is_string($data[$encryptedField]));
                         $data[$encryptedField] = $this->cypher->decrypt($data[$encryptedField]);
                     }
                 }
@@ -52,6 +53,8 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
 
                 foreach ($this->encryptedFields as $encryptedField) {
                     if ($this->isEncipherable($encryptedField, $data)) {
+                        assert(is_array($data));
+                        assert(is_string($data[$encryptedField]));
                         $data[$encryptedField] = $this->cypher->encrypt($data[$encryptedField]);
                     }
                 }
@@ -69,21 +72,31 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
                 'help' => 'ncagency.form.gateway_configuration.api_password.help',
             ])
         ;
-
-
     }
 
     protected function isDecipherable(string $key, mixed $data): bool
     {
-        return is_array($data) && key_exists($key, $data) && $this->isHex($data[$key]);
+        if (!is_array($data)) {
+            return false;
+        }
+
+        if (!array_key_exists($key, $data)) {
+            return false;
+        }
+
+        if (!is_string($data[$key])) {
+            return false;
+        }
+
+        return $this->isHex($data[$key]);
     }
 
     protected function isEncipherable(string $key, mixed $data): bool
     {
-        return is_array($data) && key_exists($key, $data);
+        return is_array($data) && array_key_exists($key, $data);
     }
 
-    public function isHex(mixed $string): bool
+    public function isHex(string $string): bool
     {
         return ctype_xdigit($string);
     }

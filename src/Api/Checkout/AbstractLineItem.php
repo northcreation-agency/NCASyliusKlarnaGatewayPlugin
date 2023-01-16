@@ -7,14 +7,23 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
 abstract class AbstractLineItem implements LineItemInterface
 {
     protected string $type;
+
     protected string $reference;
+
     protected string $name;
+
     protected int $quantity;
+
     protected string $quantityUnit;
+
     protected int $unitPrice;
+
     protected int $taxRate;
+
     protected int $totalAmount;
+
     protected int $totalDiscountAmount;
+
     protected int $totalTaxAmount;
 
     public function toArray(): array

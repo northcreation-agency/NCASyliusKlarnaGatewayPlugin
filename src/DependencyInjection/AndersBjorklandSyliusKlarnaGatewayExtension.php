@@ -14,6 +14,7 @@ final class AndersBjorklandSyliusKlarnaGatewayExtension extends Extension
 {
     /**
      * @psalm-suppress UnusedVariable
+     *
      * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container): void

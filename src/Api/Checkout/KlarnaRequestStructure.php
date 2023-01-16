@@ -10,13 +10,13 @@ use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class KlarnaRequestStructure
 {
-
     public function __construct(
         private OrderInterface $order,
         private MerchantData $merchantData,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
-    ){}
+    ) {
+    }
 
     /**
      * @throws \Exception
@@ -47,7 +47,10 @@ class KlarnaRequestStructure
 
     /**
      * Assumes Order items to be of type 'physical'
+     *
      * @throws \Exception
+     *
+     * @return OrderLine[]
      */
     protected function getOrderLinesForOrder(OrderInterface $order): array
     {
@@ -58,11 +61,14 @@ class KlarnaRequestStructure
         foreach ($order->getItems() as $item) {
             $orderLines[] = new OrderLine($item, $this->taxRateResolver, 'physical', $currentLocale);
         }
+
         return $orderLines;
     }
 
     /**
      * @throws \Exception
+     *
+     * @return ShipmentLine[]
      */
     protected function getShipmentLinesForOrder(OrderInterface $order): array
     {
@@ -71,6 +77,7 @@ class KlarnaRequestStructure
         foreach ($order->getShipments() as $shipment) {
             $shipmentLines[] = new ShipmentLine($shipment, $this->shippingChargesProcessor);
         }
+
         return $shipmentLines;
     }
 }

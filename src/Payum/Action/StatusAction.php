@@ -12,7 +12,6 @@ use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 
 class StatusAction implements ActionInterface
 {
-
     public function execute($request): void
     {
         RequestNotSupportedException::assertSupports($this, $request);
@@ -33,8 +32,8 @@ class StatusAction implements ActionInterface
 
     public function supports($request): bool
     {
-        return $request instanceof GetStatusInterface
-            && $request instanceof Generic
-            && $request->getFirstModel() instanceof SyliusPaymentInterface;
+        return $request instanceof GetStatusInterface &&
+            $request instanceof Generic &&
+            $request->getFirstModel() instanceof SyliusPaymentInterface;
     }
 }
