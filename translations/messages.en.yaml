@@ -11,8 +11,14 @@ nca_sylius_klarna_gateway_plugin:
                 label: Merchant URLs
                 help: The merchant URLs to use for the payment gateway.
     ui:
-        terms_url: Terms URL
-        checkout_url: Checkout URL
-        confirmation_url: Confirmation URL
-        push_url: Push URL
+        terms_url: 
+            label: Terms URL
+        checkout_url: 
+            label: Checkout URL
+        confirmation_url: 
+            label: Confirmation URL
+            help: The URL to redirect the customer to after the payment has been completed. Defaults to plugin confirmation route.
+        push_url: 
+            label: Push URL
+            help: The URL to receive push notifications from Klarna. Defaults to plugin push route.
         
