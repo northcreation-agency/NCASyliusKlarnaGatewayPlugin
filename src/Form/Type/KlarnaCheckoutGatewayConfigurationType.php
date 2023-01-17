@@ -6,6 +6,7 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type;
 
 use Payum\Core\Security\CypherInterface;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -64,12 +65,18 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
 
             // add the form fields
             ->add('api_username', TextType::class, [
-                'label' => 'ncagency.form.gateway_configuration.api_user.label',
-                'help' => 'ncagency.form.gateway_configuration.api_user.help',
+                'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_user.label',
+                'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_user.help',
             ])
             ->add('api_password', PasswordType::class, [
-                'label' => 'ncagency.form.gateway_configuration.api_password.label',
-                'help' => 'ncagency.form.gateway_configuration.api_password.help',
+                'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_password.label',
+                'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_password.help',
+            ])
+
+            // Merchant URLs group
+            ->add('merchantUrls', MerchantType::class, [
+                'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.label',
+                'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.help',
             ])
         ;
     }

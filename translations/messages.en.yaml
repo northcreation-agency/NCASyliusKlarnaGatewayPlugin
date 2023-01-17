@@ -1,4 +1,4 @@
-ncagency:
+nca_sylius_klarna_gateway_plugin:
     form:
         gateway_configuration:
             api_user:
@@ -7,3 +7,12 @@ ncagency:
             api_password:
                 label: API Password
                 help: The password is not stored in plain text. It will be encrypted before being stored in the database.
+            merchant_urls:
+                label: Merchant URLs
+                help: The merchant URLs to use for the payment gateway.
+    ui:
+        terms_url: Terms URL
+        checkout_url: Checkout URL
+        confirmation_url: Confirmation URL
+        push_url: Push URL
+        
