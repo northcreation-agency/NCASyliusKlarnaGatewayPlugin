@@ -11,7 +11,7 @@ use Payum\Core\GatewayFactoryInterface;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 
-class TestKlarnaCheckoutGatewayFactory extends TestCase
+class KlarnaCheckoutGatewayFactoryTest extends TestCase
 {
     private array $defaultConfig = [
         'payum.factory_name' => 'klarna_checkout',

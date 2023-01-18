@@ -7,7 +7,7 @@ namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
@@ -25,7 +25,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
     private ?KlarnaApi $api;
 
     public function __construct(
-        private Client $client,
+        private ClientInterface $client,
         private ParameterBagInterface $parameterBag,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
@@ -44,6 +44,10 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
 
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
+
+
+        $api = $this->api;
+        $paymentMethod = $payment->getMethod();
 
         $requestStructure = new KlarnaRequestStructure(
             order: $order,

@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class KlarnaCheckoutController extends \Symfony\Bundle\FrameworkBundle\Controller\AbstractController
 {
 
-    public function getSnippet(string $code): \Symfony\Component\HttpFoundation\Response
+    public function getSnippet(string $tokenValue): \Symfony\Component\HttpFoundation\Response
     {
         return new JsonResponse(
             [

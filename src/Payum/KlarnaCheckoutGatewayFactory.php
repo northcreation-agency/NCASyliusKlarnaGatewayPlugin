@@ -19,7 +19,7 @@ class KlarnaCheckoutGatewayFactory extends \Payum\Core\GatewayFactory
         ]);
 
         $config['payum.api'] = function (ArrayObject $config): KlarnaApi {
-            $apiKey = $config['api_key'];
+            $apiKey = $config['api_key'] ?? "....";
             assert(is_string($apiKey));
 
             return new KlarnaApi($apiKey);

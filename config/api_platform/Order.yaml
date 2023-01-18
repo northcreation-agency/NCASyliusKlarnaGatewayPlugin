@@ -2,10 +2,10 @@ Sylius\Component\Core\Model\Order:
     itemOperations:
         shop_klarna_widget:
             method: 'GET'
-            path: 'shop/klarna-checkout/{code}'
+            path: 'shop/orders/{tokenValue}/klarna-widget'
             controller: AndersBjorkland\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::getSnippet
             openapi_context:
-                summary: Returns an map with 2-letter country code as key, and an array of channel codes as values
+                summary: Returns a Klarna checkout snippet
                 responses:
                     200:
                         description: 'OK'
@@ -14,11 +14,8 @@ Sylius\Component\Core\Model\Order:
                                 schema:
                                     type: object
                                     properties:
-                                        countryCode:
+                                        snippet:
                                             type: string
-                                        channels:
-                                            type: array
-                                            properties:
-                                                channelCode:
-                                                    type: string
+                                            description: 'The Klarna checkout snippet'
+                                            example: '<div id="klarna-checkout-container"></div>'
             
