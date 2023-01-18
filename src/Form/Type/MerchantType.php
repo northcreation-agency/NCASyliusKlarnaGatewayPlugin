@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Form\Type;
 
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;

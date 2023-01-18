@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Payum;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Payum;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use Payum\Core\Bridge\Spl\ArrayObject;
 use Payum\Core\GatewayFactoryInterface;
 use PHPUnit\Framework\Assert;

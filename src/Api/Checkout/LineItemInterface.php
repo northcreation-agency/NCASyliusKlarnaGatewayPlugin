@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 interface LineItemInterface
 {

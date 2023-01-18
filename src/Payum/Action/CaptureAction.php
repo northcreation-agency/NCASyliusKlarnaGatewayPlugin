@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Payum\Core\Action\ActionInterface;

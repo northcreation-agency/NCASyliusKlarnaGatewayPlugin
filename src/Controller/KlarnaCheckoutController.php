@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Controller;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin;
 
 use Sylius\Bundle\CoreBundle\Application\SyliusPluginTrait;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-final class AndersBjorklandSyliusKlarnaGatewayPlugin extends Bundle
+final class NorthCreationAgencySyliusKlarnaGatewayPlugin extends Bundle
 {
     use SyliusPluginTrait;
 

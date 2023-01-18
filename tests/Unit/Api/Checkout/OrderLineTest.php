@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\OrderLine;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\OrderLine;
 use PHPUnit\Framework\Assert;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelPricing;

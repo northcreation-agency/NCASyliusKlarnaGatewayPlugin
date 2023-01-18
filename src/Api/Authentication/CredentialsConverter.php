@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Authentication;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 

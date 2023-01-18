@@ -5,11 +5,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     locale: 'en'
-    anders_bjorkland_sylius_klarna_gateway.checkout.klarna_secret: '%env(KLARNA_SECRET)%'
-    anders_bjorkland_sylius_klarna_gateway.checkout.uri: '%env(KLARNA_CHECKOUT_URI)%'
-    anders_bjorkland_sylius_klarna_gateway.api.username: '%env(KLARNA_USERNAME)%'
-    anders_bjorkland_sylius_klarna_gateway.api.password: '%env(KLARNA_PASSWORD)%'
-    anders_bjorkland_sylius_klarna_gateway.cypher.key: '%env(PAYUM_CYPHER_KEY)%'
+    northcreation_agency_sylius_klarna_gateway.cypher.key: '%env(PAYUM_CYPHER_KEY)%'
 
 services:
     # default configuration for services in *this* file
@@ -19,7 +15,7 @@ services:
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
-    AndersBjorkland\SyliusKlarnaGatewayPlugin\:
+    NorthCreationAgency\SyliusKlarnaGatewayPlugin\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
@@ -28,21 +24,21 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    anders_bjorkland_sylius_klarna_gateway.klarna_checkout:
+    northcreation_agency_sylius_klarna_gateway.klarna_checkout:
         class: Payum\Core\Bridge\Symfony\Builder\GatewayFactoryBuilder
-        arguments: ['AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory']
+        arguments: ['NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory']
         tags:
             - { name: payum.gateway_factory_builder, factory: klarna_checkout }
     
-    anders_bjorkland_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
-        class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type\KlarnaCheckoutGatewayConfigurationType
-        arguments: ['@anders_bjorkland_sylius_klarna_gateway.cypher']
+    northcreation_agency_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Form\Type\KlarnaCheckoutGatewayConfigurationType
+        arguments: ['@northcreation_agency_sylius_klarna_gateway.cypher']
         tags:
             - { name: sylius.gateway_configuration_type, type: klarna_checkout, label: 'Klarna Checkout' }
             - { name: form.type }
     
-    anders_bjorkland_sylius_klarna_gateway.actions.capture:
-        class: AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action\CaptureAction
+    northcreation_agency_sylius_klarna_gateway.actions.capture:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\CaptureAction
         public: true
         arguments: [
             '@sylius.http_client',
@@ -54,7 +50,7 @@ services:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }
     
     
-    anders_bjorkland_sylius_klarna_gateway.cypher:
+    northcreation_agency_sylius_klarna_gateway.cypher:
         class: Payum\Core\Bridge\Defuse\Security\DefuseCypher
-        arguments: ['%anders_bjorkland_sylius_klarna_gateway.cypher.key%']
+        arguments: ['%northcreation_agency_sylius_klarna_gateway.cypher.key%']
         public: true

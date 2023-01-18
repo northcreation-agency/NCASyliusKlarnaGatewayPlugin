@@ -1,5 +1,5 @@
 {
-    "name": "anders-bjorkland/sylius-klarna-gateway-plugin",
+    "name": "northcreation-agency/sylius-klarna-gateway-plugin",
     "type": "sylius-plugin",
     "keywords": [
         "klarna",
@@ -66,8 +66,8 @@
     },
     "autoload": {
         "psr-4": {
-            "AndersBjorkland\\SyliusKlarnaGatewayPlugin\\": "src/",
-            "Tests\\AndersBjorkland\\SyliusKlarnaGatewayPlugin\\": "tests/"
+            "NorthCreationAgency\\SyliusKlarnaGatewayPlugin\\": "src/",
+            "Tests\\NorthCreationAgency\\SyliusKlarnaGatewayPlugin\\": "tests/"
         }
     },
     "autoload-dev": {

@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\Action\StatusAction;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\StatusAction;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use Payum\Core\Bridge\Spl\ArrayObject;
+use Payum\Core\GatewayFactory;
 
-class KlarnaCheckoutGatewayFactory extends \Payum\Core\GatewayFactory
+class KlarnaCheckoutGatewayFactory extends GatewayFactory
 {
     protected function populateConfig(ArrayObject $config): void
     {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\ShipmentLine;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\ShipmentLine;
 use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;

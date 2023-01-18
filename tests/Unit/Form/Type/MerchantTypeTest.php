@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Form\Type;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Form\Type;
 
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Form\Type\MerchantType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\Forms;
 
@@ -26,7 +27,7 @@ class MerchantTypeTest extends \PHPUnit\Framework\TestCase
     {
         return Forms::createFormFactoryBuilder()
             ->getFormFactory()
-            ->createBuilder(\AndersBjorkland\SyliusKlarnaGatewayPlugin\Form\Type\MerchantType::class)
+            ->createBuilder(MerchantType::class)
             ->getForm();
     }
 }

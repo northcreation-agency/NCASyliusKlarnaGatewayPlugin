@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Api\Authentication;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api\Authentication;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Authentication\CredentialsConverter;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\CredentialsConverter;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;

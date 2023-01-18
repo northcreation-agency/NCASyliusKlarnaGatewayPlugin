@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\AndersBjorkland\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
+namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
 
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
-use AndersBjorkland\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\Assert;
