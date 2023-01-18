@@ -261,7 +261,7 @@
         ]
     },
     "symfony/debug-bundle": {
-        "version": "6.2",
+        "version": "6.0",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
