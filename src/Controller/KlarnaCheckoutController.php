@@ -17,8 +17,9 @@ class KlarnaCheckoutController extends AbstractController
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
-        private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever
-    ){}
+        private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
+    ) {
+    }
 
     public function getSnippet(string $tokenValue): Response
     {
@@ -38,12 +39,12 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Payment method not found'], 404);
         }
 
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+        $_basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
 
         return new JsonResponse(
             [
                 'snippet' => '<h1>Hello World</h1>',
-            ]
+            ],
         );
     }
 }

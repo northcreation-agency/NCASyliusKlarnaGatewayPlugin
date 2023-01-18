@@ -10,12 +10,13 @@ use Sylius\Component\Core\Model\PaymentMethodInterface;
 class BasicAuthenticationRetriever implements BasicAuthenticationRetrieverInterface
 {
     public function __construct(
-        private CypherInterface $cypher
-    ){}
+        private CypherInterface $cypher,
+    ) {
+    }
 
     /**
-     * @param PaymentMethodInterface $paymentMethod
-     * @return string. Base64 encoded string with leading 'Basic '
+     * @return string Base64 encoded string with leading 'Basic '
+     *
      * @throws \Exception
      */
     public function getBasicAuthentication(PaymentMethodInterface $paymentMethod): string
@@ -29,12 +30,12 @@ class BasicAuthenticationRetriever implements BasicAuthenticationRetrieverInterf
             throw new \Exception('Missing API credentials: ' . json_encode($config));
         }
 
-        $apiUsername = $this->cypher->decrypt($config['api_username']);
-        $apiPassword = $this->cypher->decrypt($config['api_password']);
+        $apiUsername = $this->cypher->decrypt((string) $config['api_username']);
+        $apiPassword = $this->cypher->decrypt((string) $config['api_password']);
 
         return 'Basic ' . CredentialsConverter::toBase64(
             $apiUsername,
-            $apiPassword
+            $apiPassword,
         );
     }
 
@@ -54,9 +55,10 @@ class BasicAuthenticationRetriever implements BasicAuthenticationRetrieverInterf
             return false;
         }
 
-        $value = $data[$field];
+        if (!is_string($data[$field])) {
+            return false;
+        }
 
-        return is_string($value) && strlen($value) > 0;
+        return strlen($data[$field]) > 0;
     }
-
 }

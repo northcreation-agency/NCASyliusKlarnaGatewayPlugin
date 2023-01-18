@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\RequestException;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
 use Payum\Core\Exception\RequestNotSupportedException;
@@ -45,10 +45,6 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
 
-
-        $api = $this->api;
-        $paymentMethod = $payment->getMethod();
-
         $requestStructure = new KlarnaRequestStructure(
             order: $order,
             merchantData:  new MerchantData('example.com', 'example.com', 'example.com', 'example.com'),
@@ -57,7 +53,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
         );
 
         /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
-        $klarnaUri = $this->parameterBag->get('anders_bjorkland_sylius_klarna_gateway.checkout.uri');
+        $klarnaUri = $this->parameterBag->get('northcreation_agency_sylius_klarna_gateway.checkout.uri');
 
         assert(is_string($klarnaUri));
 

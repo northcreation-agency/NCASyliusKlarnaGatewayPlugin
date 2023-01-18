@@ -9,11 +9,6 @@ use Symfony\Component\Form\FormBuilderInterface;
 
 class MerchantType extends \Symfony\Component\Form\AbstractType
 {
-    /**
-     * @param FormBuilderInterface $builder
-     * @param array $options
-     * @return void
-     */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
