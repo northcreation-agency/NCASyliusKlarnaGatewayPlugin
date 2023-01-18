@@ -16,9 +16,6 @@ class CredentialsConverterTest extends TestCase
      */
     public function testToBase64(): void
     {
-        $parameterBag = $this->createMock(ParameterBagInterface::class);
-        $parameterBag->method('get')->willReturnOnConsecutiveCalls('username', 'password');
-        $credentialsConverter = new CredentialsConverter($parameterBag);
-        Assert::assertSame('dXNlcm5hbWU6cGFzc3dvcmQ=', $credentialsConverter->toBase64());
+        Assert::assertSame('dXNlcm5hbWU6cGFzc3dvcmQ=', CredentialsConverter::toBase64('username', 'password'));
     }
 }

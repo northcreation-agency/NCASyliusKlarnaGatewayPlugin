@@ -54,3 +54,13 @@ services:
         class: Payum\Core\Bridge\Defuse\Security\DefuseCypher
         arguments: ['%northcreation_agency_sylius_klarna_gateway.cypher.key%']
         public: true
+
+    northcreation_agency_sylius_klarna_gateway.basic_authentication_retriever:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetriever
+        public: true
+        arguments: [
+            '@northcreation_agency_sylius_klarna_gateway.cypher'
+        ]
+    
+    NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface: '@northcreation_agency_sylius_klarna_gateway.basic_authentication_retriever'
+    Payum\Core\Security\CypherInterface: '@northcreation_agency_sylius_klarna_gateway.cypher'
