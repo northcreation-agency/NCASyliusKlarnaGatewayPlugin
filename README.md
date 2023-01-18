@@ -11,6 +11,21 @@ And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout
 Official API documentation: https://docs.klarna.com/api/checkout/  
 Payum documentation for encrypting gateway configuration: https://github.com/Payum/Payum/blob/master/docs/symfony/encrypt-gateway-configs-stored-in-database.md  
 
+## Configuration
+TODO: describe importing api-config:
+In _plugin development_ environment, the api-config is imported by adding the following to 
+api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
+```yaml
+- '%kernel.project_dir%/../../sylius-klarna-gateway-plugin/config/api_platform'
+```
+
+In a _project using the plugin_, the api-config is imported by adding the following to
+api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
+```yaml
+- '%kernel.project_dir%/../../vendor/andersbjorkland/sylius-klarna-gateway-plugin/config/api_platform'
+```
+
+
 ## Credentials encryption
 Makes use of `defuse/php-encryption` to encrypt the credentials. 
 This in turn requires `ext-openssl` to be installed on the server.

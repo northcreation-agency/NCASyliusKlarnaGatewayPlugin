@@ -1,0 +1,24 @@
+Sylius\Component\Core\Model\Order:
+    itemOperations:
+        shop_klarna_widget:
+            method: 'GET'
+            path: 'shop/klarna-checkout/{code}'
+            controller: AndersBjorkland\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::getSnippet
+            openapi_context:
+                summary: Returns an map with 2-letter country code as key, and an array of channel codes as values
+                responses:
+                    200:
+                        description: 'OK'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        countryCode:
+                                            type: string
+                                        channels:
+                                            type: array
+                                            properties:
+                                                channelCode:
+                                                    type: string
+            
