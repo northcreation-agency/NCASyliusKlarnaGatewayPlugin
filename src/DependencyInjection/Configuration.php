@@ -14,8 +14,21 @@ final class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('northcreation_agency_sylius_klarna_gateway');
-        $rootNode = $treeBuilder->getRootNode();
+        $treeBuilder = new TreeBuilder('north_creation_agency_sylius_klarna_gateway');
+        $treeBuilder->getRootNode()
+            ->children()
+                ->arrayNode('cypher')
+                    ->children()
+                        ->scalarNode('key')->end()
+                    ->end()
+                ->end()
+                ->arrayNode('checkout')
+                    ->children()
+                        ->scalarNode('uri')->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
 
         return $treeBuilder;
     }

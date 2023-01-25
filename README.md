@@ -12,7 +12,30 @@ Official API documentation: https://docs.klarna.com/api/checkout/
 Payum documentation for encrypting gateway configuration: https://github.com/Payum/Payum/blob/master/docs/symfony/encrypt-gateway-configs-stored-in-database.md  
 
 ## Configuration
-TODO: describe importing api-config:
+
+### Environment variables
+```ENV
+PAYUM_CYPHER_KEY=OUTPUT_OF_vendor/bin/defuse-generate-key
+```
+
+### General configurations
+Add cypher-key configuration. This should point to the environment variable defined above.
+
+Add the Klarna Checkout URI. This URI is dependent on region and if it is in development or in production.
+
+The configuration will be loaded into the service container and will be accessible in a parameter bag.
+
+This config is for development environment:
+
+```yaml
+north_creation_agency_sylius_klarna_gateway:
+    cypher:
+        key: '%env(PAYUM_CYPHER_KEY)%'
+    checkout:
+        uri: https://api.playground.klarna.com/checkout/v3/orders
+```
+
+### Routes
 In _plugin development_ environment, the api-config is imported by adding the following to 
 api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
 ```yaml
@@ -31,16 +54,7 @@ Makes use of `defuse/php-encryption` to encrypt the credentials.
 This in turn requires `ext-openssl` to be installed on the server.
 
 ## Klarna Checkout API  
-The test-url for the api is accessed via: https://beeceptor.com/console/klarna  
-
-### Recommended ENV variables
-```ENV
-PAYUM_CYPHER_KEY=OUTPUT_OF_vendor/bin/defuse-generate-key
-KLARNA_SECRET=test_secret_key
-KLARNA_CHECKOUT_URI=https://klarna.free.beeceptor.com/checkout
-KLARNA_USERNAME=test_username
-KLARNA_PASSWORD=test_password
-```
+The test-url for the api is accessed via: https://beeceptor.com/console/klarna
 
 ### Additional parameter explanation
 *When not covered by official documentation*  

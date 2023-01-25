@@ -67,7 +67,7 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
                 'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_user.label',
                 'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_user.help',
             ])
-            ->add('api_password', PasswordType::class, [
+            ->add('api_password', TextType::class, [
                 'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_password.label',
                 'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.api_password.help',
             ])
