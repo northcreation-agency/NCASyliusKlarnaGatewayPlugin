@@ -66,7 +66,7 @@ class KlarnaCheckoutController extends AbstractController
             order: $order,
             merchantData: $merchantData,
             taxRateResolver: $this->taxRateResolver,
-            shippingChargesProcessor: $this->shippingChargesProcessor
+            shippingChargesProcessor: $this->shippingChargesProcessor,
         );
 
         $requestData = $klarnaRequestStructure->toArray();
@@ -75,17 +75,13 @@ class KlarnaCheckoutController extends AbstractController
             [
                 'snippet' => '<h1>Hello World</h1>',
                 $requestData,
-
             ],
         );
     }
 
-
     /**
      * @psalm-suppress DeprecatedClass
      *
-     * @param PaymentInterface $payment
-     * @return TokenInterface
      * @throws \InvalidArgumentException
      */
     protected function getToken(PaymentInterface $payment): TokenInterface
@@ -93,7 +89,6 @@ class KlarnaCheckoutController extends AbstractController
         $tokenFactory = $this->payum->getTokenFactory();
         $paymentMethod = $payment->getMethod();
         Assert::isInstanceOf($paymentMethod, PaymentMethodInterface::class);
-
 
         $gatewayConfig = $paymentMethod->getGatewayConfig();
         Assert::notNull($gatewayConfig);
@@ -103,7 +98,7 @@ class KlarnaCheckoutController extends AbstractController
         return $tokenFactory->createCaptureToken(
             $gatewayName,
             $payment,
-            'sylius_shop_homepage'
+            'sylius_shop_homepage',
         );
     }
 
@@ -118,9 +113,15 @@ class KlarnaCheckoutController extends AbstractController
             return null;
         }
 
+        /** @var string|null $pushUrl */
         $pushUrl = $merchantData['pushUrl'] ?? null;
+
+        /** @var string|null $termsUrl */
         $termsUrl = $merchantData['termsUrl'] ?? null;
+
         $checkoutUrl = $this->getPayumCaptureDoUrl($payment);
+
+        /** @var string|null $confirmationUrl */
         $confirmationUrl = $merchantData['confirmationUrl'] ?? null;
 
         if (null === $termsUrl || null === $confirmationUrl || null === $pushUrl) {
@@ -141,7 +142,7 @@ class KlarnaCheckoutController extends AbstractController
             [
                 'payum_token' => $token->getHash(),
             ],
-            UrlGeneratorInterface::ABSOLUTE_URL
+            UrlGeneratorInterface::ABSOLUTE_URL,
         );
 
         return $payumCaptureUrl;
