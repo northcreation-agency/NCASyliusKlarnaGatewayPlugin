@@ -9,6 +9,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\Address;
 use Sylius\Component\Core\Model\Adjustment;
@@ -26,6 +27,7 @@ use Sylius\Component\Core\Model\ShippingMethod;
 use Sylius\Component\Core\Model\TaxRate;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Product\Model\ProductVariantTranslation;
+use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
@@ -46,11 +48,17 @@ class KlarnaRequestStructureTest extends TestCase
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
 
+        $taxCalculator = $this->createMock(CalculatorInterface::class);
+        $taxCalculator
+            ->method('calculate')
+            ->willReturn(4545.0);
+
         $this->klarnaRequestStructure = new KlarnaRequestStructure(
             $this->order,
             $this->merchantData,
             $taxRateResolver,
-            $this->createMock(OrderProcessorInterface::class)
+            $this->createMock(OrderProcessorInterface::class),
+            $taxCalculator
         );
     }
 
@@ -62,7 +70,7 @@ class KlarnaRequestStructureTest extends TestCase
                   "purchase_currency" => "GBP",
                   "locale" => "en-GB",
                   "order_amount" => 50000,
-                  "order_tax_amount" => 4545,
+                  "order_tax_amount" => 5545,
                   "order_lines" => [
                       [
                           "type" => "physical",

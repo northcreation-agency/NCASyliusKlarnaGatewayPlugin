@@ -17,7 +17,7 @@ class OrderLine extends AbstractLineItem
     public function __construct(
         OrderItemInterface $orderItem,
         TaxRateResolverInterface $taxRateResolver,
-        CalculatorInterface $delegatingCalculator,
+        CalculatorInterface $taxCalculator,
         string $type = 'physical',
         string $locale = 'en_US',
     ) {
@@ -43,7 +43,7 @@ class OrderLine extends AbstractLineItem
         $taxRate = $taxRateResolver->resolve($variant);
 
         assert($taxRate instanceof TaxRateInterface);
-        $tax = $delegatingCalculator->calculate($orderItem->getTotal(), $taxRate);
+        $tax = $taxCalculator->calculate($orderItem->getTotal(), $taxRate);
 
         $this->type = $type;
         $this->reference = $variantCode;

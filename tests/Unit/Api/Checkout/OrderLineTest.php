@@ -15,6 +15,7 @@ use Sylius\Component\Core\Model\ProductTranslation;
 use Sylius\Component\Core\Model\ProductVariant;
 use Sylius\Component\Core\Model\TaxRate;
 use Sylius\Component\Product\Model\ProductVariantTranslation;
+use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
@@ -30,8 +31,13 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
 
+        $taxCalculator = $this->createMock(CalculatorInterface::class);
+        $taxCalculator
+            ->method('calculate')
+            ->willReturn(4545.0);
+
         try {
-            $this->orderLine = new OrderLine($this->createOrderItem(), $taxRateResolver);
+            $this->orderLine = new OrderLine($this->createOrderItem(), $taxRateResolver, $taxCalculator);
         } catch (\Exception $e) {
             Assert::fail($e->getMessage());
         }
