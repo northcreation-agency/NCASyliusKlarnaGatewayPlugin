@@ -6,6 +6,7 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
+use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class KlarnaRequestStructure
@@ -15,6 +16,7 @@ class KlarnaRequestStructure
         private MerchantData $merchantData,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
+        private CalculatorInterface $taxCalculator
     ) {
     }
 
@@ -34,15 +36,33 @@ class KlarnaRequestStructure
             $orderLinesArray[] = $shipmentLine->toArray();
         }
 
+        $locale = $this->order->getLocaleCode();
+        assert(is_string($locale));
+        $locale = str_replace('_', '-', $locale);
+
         return [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
-            'locale' => $this->order->getLocaleCode(),
+            'locale' => $locale,
             'order_amount' => $this->order->getTotal(),
-            'order_tax_amount' => $this->order->getTaxTotal(),
+            'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
             'merchant_urls' => $this->merchantData->toArray(),
         ];
+    }
+
+    /**
+     * @param array|AbstractLineItem[] $orderLines
+     * @return int
+     */
+    protected function getTaxTotal(array $orderLines): int
+    {
+        $taxTotal = 0;
+        foreach ($orderLines as $orderLine) {
+            $taxTotal += $orderLine->getTotalTaxAmount();
+        }
+
+        return $taxTotal;
     }
 
     /**
@@ -59,7 +79,13 @@ class KlarnaRequestStructure
         assert($currentLocale !== null);
 
         foreach ($order->getItems() as $item) {
-            $orderLines[] = new OrderLine($item, $this->taxRateResolver, 'physical', $currentLocale);
+            $orderLines[] = new OrderLine(
+                $item,
+                $this->taxRateResolver,
+                $this->taxCalculator,
+                'physical',
+                $currentLocale
+            );
         }
 
         return $orderLines;

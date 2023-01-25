@@ -26,6 +26,11 @@ abstract class AbstractLineItem implements LineItemInterface
 
     protected int $totalTaxAmount;
 
+    public function getTotalTaxAmount(): int
+    {
+        return $this->totalTaxAmount;
+    }
+
     public function toArray(): array
     {
         return [

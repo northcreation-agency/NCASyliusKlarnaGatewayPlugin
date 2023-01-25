@@ -5,7 +5,6 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     locale: 'en'
-    northcreation_agency_sylius_klarna_gateway.cypher.key: '%env(PAYUM_CYPHER_KEY)%'
 
 services:
     # default configuration for services in *this* file
@@ -24,43 +23,45 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-    northcreation_agency_sylius_klarna_gateway.klarna_checkout:
+    north_creation_agency_sylius_klarna_gateway.klarna_checkout:
         class: Payum\Core\Bridge\Symfony\Builder\GatewayFactoryBuilder
         arguments: ['NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\KlarnaCheckoutGatewayFactory']
         tags:
             - { name: payum.gateway_factory_builder, factory: klarna_checkout }
     
-    northcreation_agency_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
+    north_creation_agency_sylius_klarna_gateway.form.type.klarna_checkout_gateway_configuration:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Form\Type\KlarnaCheckoutGatewayConfigurationType
-        arguments: ['@northcreation_agency_sylius_klarna_gateway.cypher']
+        arguments: ['@north_creation_agency_sylius_klarna_gateway.cypher']
         tags:
             - { name: sylius.gateway_configuration_type, type: klarna_checkout, label: 'Klarna Checkout' }
             - { name: form.type }
     
-    northcreation_agency_sylius_klarna_gateway.actions.capture:
+    north_creation_agency_sylius_klarna_gateway.actions.capture:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\CaptureAction
         public: true
         arguments: [
             '@sylius.http_client',
             '@parameter_bag',
             '@sylius.tax_rate_resolver',
-            '@sylius.order_processing.shipping_charges_processor'
+            '@sylius.order_processing.shipping_charges_processor',
+            '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever'
         ]
         tags:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }
     
     
-    northcreation_agency_sylius_klarna_gateway.cypher:
+    north_creation_agency_sylius_klarna_gateway.cypher:
         class: Payum\Core\Bridge\Defuse\Security\DefuseCypher
-        arguments: ['%northcreation_agency_sylius_klarna_gateway.cypher.key%']
+        arguments: ['%north_creation_agency_sylius_klarna_gateway.cypher.key%']
         public: true
 
-    northcreation_agency_sylius_klarna_gateway.basic_authentication_retriever:
+    north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetriever
         public: true
         arguments: [
-            '@northcreation_agency_sylius_klarna_gateway.cypher'
+            '@north_creation_agency_sylius_klarna_gateway.cypher'
         ]
-    
-    NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface: '@northcreation_agency_sylius_klarna_gateway.basic_authentication_retriever'
-    Payum\Core\Security\CypherInterface: '@northcreation_agency_sylius_klarna_gateway.cypher'
+
+    GuzzleHttp\ClientInterface: '@sylius.http_client'    
+    NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface: '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever'
+    Payum\Core\Security\CypherInterface: '@north_creation_agency_sylius_klarna_gateway.cypher'

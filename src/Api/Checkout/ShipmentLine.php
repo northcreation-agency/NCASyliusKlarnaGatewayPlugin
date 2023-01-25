@@ -61,7 +61,7 @@ class ShipmentLine extends AbstractLineItem
         $this->name = $name;
         $this->quantity = $shipment->getShippingUnitCount();
         $this->quantityUnit = 'pcs';
-        $this->unitPrice = $shipment->getShippingUnitTotal();
+        $this->unitPrice = $shippingCharge/$shipment->getShippingUnitCount();
         $this->taxRate = $shippingTaxRate;
         $this->totalAmount = $shippingCharge;
         $this->totalDiscountAmount = 0;

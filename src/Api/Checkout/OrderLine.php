@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Taxation\Calculator\CalculatorInterface;
+use Sylius\Component\Taxation\Model\TaxRateInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class OrderLine extends AbstractLineItem
@@ -15,6 +17,7 @@ class OrderLine extends AbstractLineItem
     public function __construct(
         OrderItemInterface $orderItem,
         TaxRateResolverInterface $taxRateResolver,
+        CalculatorInterface $delegatingCalculator,
         string $type = 'physical',
         string $locale = 'en_US',
     ) {
@@ -37,6 +40,10 @@ class OrderLine extends AbstractLineItem
 
         // resolve tax rate
         $taxRateFloat = $taxRateResolver->resolve($variant)?->getAmount() ?? 0.0;
+        $taxRate = $taxRateResolver->resolve($variant);
+
+        assert($taxRate instanceof TaxRateInterface);
+        $tax = $delegatingCalculator->calculate($orderItem->getTotal(), $taxRate);
 
         $this->type = $type;
         $this->reference = $variantCode;
@@ -47,7 +54,7 @@ class OrderLine extends AbstractLineItem
         $this->taxRate = (int) ($taxRateFloat * 100 * 100);
         $this->totalAmount = $orderItem->getTotal();
         $this->totalDiscountAmount = $orderItem->getTotal() - $orderItem->getDiscountedUnitPrice();
-        $this->totalTaxAmount = $orderItem->getTaxTotal();
+        $this->totalTaxAmount = (int)($tax);
     }
 
     public function getLineItem(): LineItemInterface
