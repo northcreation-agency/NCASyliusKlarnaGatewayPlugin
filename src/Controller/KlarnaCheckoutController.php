@@ -22,6 +22,7 @@ use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
@@ -87,6 +88,7 @@ class KlarnaCheckoutController extends AbstractController
         $requestData = $klarnaRequestStructure->toArray();
 
         $snippet = null;
+        $klarnaOrderId = null;
         $errorMessage = '';
         $requestStatus = 200;
         try {
@@ -104,6 +106,9 @@ class KlarnaCheckoutController extends AbstractController
 
             $contents = json_decode($response->getBody()->getContents(), true);
             assert(is_array($contents));
+
+            /** @var string|null $klarnaOrderId */
+            $klarnaOrderId = $contents['order_id'] ?? null;
 
             /** @var string $snippet */
             $snippet = $contents[self::WIDGET_SNIPPET_KEY] ?? throw new \Exception(
@@ -130,12 +135,65 @@ class KlarnaCheckoutController extends AbstractController
             );
         }
 
+        if (is_string($klarnaOrderId)) {
+            $this->addKlarnaReference($payment, $klarnaOrderId);
+        }
+
         return new JsonResponse(
             [
                 'snippet' => $snippet,
-                $requestData,
+                'request_structure' => $requestData
             ],
         );
+    }
+
+    public function handlePush(string $tokenValue, Request $request): Response
+    {
+        /** @var ?OrderInterface $order */
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
+        if (null === $order) {
+            return new JsonResponse(['error' => 'Order not found'], 404);
+        }
+
+        $klarnaOrderId = $request->query->get('klarna_order_id');
+        if ($klarnaOrderId === null) {
+            return new JsonResponse([
+                'message' => 'No order was referenced. Expected klarna_order_id query parameter'
+            ], 404);
+        }
+
+        /** @var string $pushConfirmationUrl */
+        $pushConfirmationUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation'
+        );
+
+        /** @var string $pushConfirmationUrl */
+        $pushConfirmationUrl = $this->replacePlaceholder($klarnaOrderId, $pushConfirmationUrlTemplate);
+
+        try {
+            /** @var PaymentInterface $payment */
+            $payment = $order->getPayments()->first();
+
+            /** @var ?PaymentMethodInterface $method */
+            $method = $payment->getMethod();
+
+            $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+
+            $response = $this->client->request(
+                'POST',
+                $pushConfirmationUrl,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                ]
+            );
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => 'Something went wrong'], 500);
+        }
+
+        return new JsonResponse(null, 204);
     }
 
     /**
@@ -173,15 +231,15 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         /** @var string|null $pushUrl */
-        $pushUrl = $merchantData['pushUrl'] ?? null;
+        $pushUrl = $this->getPushUrl($payment->getOrder());
 
         /** @var string|null $termsUrl */
         $termsUrl = $merchantData['termsUrl'] ?? null;
 
-        $checkoutUrl = $this->getPayumCaptureDoUrl($payment);
+        $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
         /** @var string|null $confirmationUrl */
-        $confirmationUrl = $merchantData['confirmationUrl'] ?? null;
+        $confirmationUrl = $this->getPayumCaptureDoUrl($payment);
 
         if (null === $termsUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;
@@ -205,5 +263,42 @@ class KlarnaCheckoutController extends AbstractController
         );
 
         return $payumCaptureUrl;
+    }
+
+    protected function getPushUrl(OrderInterface $order): string
+    {
+        $router = $this->container->get('router');
+        assert($router instanceof \Symfony\Component\Routing\RouterInterface);
+
+        $pushUrl = $router->generate(
+            'api_orders_shop_klarna_checkout_push_item',
+            [
+                'tokenValue' => $order->getTokenValue()
+            ],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        $pushUrl .= '?klarna_order_id={checkout.order.id}';
+
+        return $pushUrl;
+    }
+
+    private function addKlarnaReference(PaymentInterface $payment, string $reference): void
+    {
+        $details = $payment->getDetails();
+
+        if (!array_key_exists('klarna_order_id', $details)) {
+            $details['klarna_order_id'] = $reference;
+        }
+
+        $payment->setDetails($details);
+    }
+
+    public function replacePlaceholder($replacement, $string): string
+    {
+        $strStart = strpos($string, '{');
+        $strEnd = strpos($string, '}');
+
+        return substr_replace($string, $replacement, $strStart, $strEnd - $strStart + 1);
     }
 }
