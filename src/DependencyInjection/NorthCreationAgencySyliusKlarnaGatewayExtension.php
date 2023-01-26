@@ -42,7 +42,15 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
                 'north_creation_agency_sylius_klarna_gateway.checkout.uri',
                 $checkoutUri
             );
+
+            /** @var string|null $pushConfirmation */
+            $pushConfirmation = $config['checkout']['push_confirmation'] ?? '';
+            $container->setParameter(
+                'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
+                $pushConfirmation
+            );
         }
+
     }
 
     public function getConfiguration(array $config, ContainerBuilder $container): ConfigurationInterface

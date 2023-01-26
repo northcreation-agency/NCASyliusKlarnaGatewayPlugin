@@ -48,7 +48,8 @@ class KlarnaRequestStructure
             throw new \Exception('Could not find a billing address!');
         }
 
-        $billingAddressData = new AddressData($billingAddress);
+        $customer = $this->order->getCustomer();
+        $billingAddressData = new AddressData($billingAddress, $customer);
 
         $referenceNumber = $this->order->getNumber();
         assert(is_string($referenceNumber));

@@ -29,6 +29,7 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('checkout')
                     ->children()
                         ->scalarNode('uri')->end()
+                        ->scalarNode('push_confirmation')->end()
                     ->end()
                 ->end()
             ->end()
