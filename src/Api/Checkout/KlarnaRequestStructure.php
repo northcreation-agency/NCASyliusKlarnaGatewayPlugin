@@ -52,12 +52,13 @@ class KlarnaRequestStructure
     }
 
     /**
-     * @param array|AbstractLineItem[] $orderLines
+     * @param AbstractLineItem[] $orderLines
      * @return int
      */
     protected function getTaxTotal(array $orderLines): int
     {
         $taxTotal = 0;
+
         foreach ($orderLines as $orderLine) {
             $taxTotal += $orderLine->getTotalTaxAmount();
         }

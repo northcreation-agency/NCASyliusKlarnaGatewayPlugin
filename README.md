@@ -48,6 +48,45 @@ api_platform.mapping.paths in tests/Application/config/packages/api_platform.yam
 - '%kernel.project_dir%/../../vendor/andersbjorkland/sylius-klarna-gateway-plugin/config/api_platform'
 ```
 
+### Template
+The Klarna Widget is used in an iframe. This boilerplate contains required JavaScript code and 
+where to paste the widget:  
+```html 
+<html>
+
+<head>
+</head>
+
+<body>
+
+    <textarea style="display: none" id="KCO">
+        <!-- PASTE the widget snippet here! -->
+    </textarea>
+
+    <div id="klarna-checkout-wrapper">
+    </div>
+
+    <!-- START - Dont edit -->
+    <script type="text/javascript">
+        var checkoutContainer = document.getElementById('klarna-checkout-wrapper')
+        checkoutContainer.innerHTML = (document.getElementById("KCO").value).replace(/\\"/g, "\"").replace(/\\n/g, "");
+        var scriptsTags = checkoutContainer.getElementsByTagName('script')
+        for (var i = 0; i < scriptsTags.length; i++) {
+            var parentNode = scriptsTags[i].parentNode
+            var newScriptTag = document.createElement('script')
+            newScriptTag.type = 'text/javascript'
+            newScriptTag.text = scriptsTags[i].text
+            parentNode.removeChild(scriptsTags[i])
+            parentNode.appendChild(newScriptTag)
+        }
+    </script>
+    <!-- END -->
+
+</body>
+</html>
+
+```
+
 
 ## Credentials encryption
 Makes use of `defuse/php-encryption` to encrypt the credentials. 

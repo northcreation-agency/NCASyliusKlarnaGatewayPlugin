@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
@@ -14,8 +17,10 @@ use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
+use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -23,16 +28,22 @@ use Webmozart\Assert\Assert;
 
 class KlarnaCheckoutController extends AbstractController
 {
+    public const WIDGET_SNIPPET_KEY = 'html_snippet';
+
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
         private Payum $payum,
+        private ParameterBagInterface $parameterBag,
+        private ClientInterface $client,
+        private CalculatorInterface $taxCalculator
     ) {
     }
 
     /**
+     * @psalm-suppress UndefinedClass
      * @throws \Exception
      */
     public function getSnippet(string $tokenValue): Response
@@ -53,7 +64,7 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Payment method not found'], 404);
         }
 
-        $_basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
         $merchantData = $this->getMerchantData($payment);
 
         if (null === $merchantData) {
@@ -62,18 +73,66 @@ class KlarnaCheckoutController extends AbstractController
             ], 404);
         }
 
+        /** @var string $klarnaUri */
+        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
+
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
             merchantData: $merchantData,
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
+            taxCalculator: $this->taxCalculator,
         );
 
         $requestData = $klarnaRequestStructure->toArray();
 
+        $snippet = null;
+        $errorMessage = '';
+        $requestStatus = 200;
+        try {
+            $response = $this->client->request(
+                'POST',
+                $klarnaUri,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($requestData),
+                ],
+            );
+
+            $contents = json_decode($response->getBody()->getContents(), true);
+            assert(is_array($contents));
+
+            /** @var string $snippet */
+            $snippet = $contents[self::WIDGET_SNIPPET_KEY] ?? throw new \Exception(
+                'Expected to find key ' . self::WIDGET_SNIPPET_KEY . ' but none were found in response.',
+                500
+            );
+
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+            $requestStatus = $response !== null ? $response->getStatusCode() : 403;
+            $errorMessage =
+                $response !== null ?
+                $response->getBody()->getContents() : 'Something went wrong with request.'
+            ;
+        } catch (GuzzleException $e) {
+            $requestStatus = 500;
+            $errorMessage = $e->getMessage();
+        }
+
+        if (strlen($errorMessage) > 0) {
+            return new JsonResponse(
+                ['error_message' => $errorMessage],
+                $requestStatus
+            );
+        }
+
         return new JsonResponse(
             [
-                'snippet' => '<h1>Hello World</h1>',
+                'snippet' => $snippet,
                 $requestData,
             ],
         );

@@ -27,16 +27,20 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
         $container->resolveEnvPlaceholders(true);
 
         if (key_exists('cypher', $config)) {
+            /** @var string $cypherKey */
+            $cypherKey = $config['cypher']['key'] ?? '';
             $container->setParameter(
                 'north_creation_agency_sylius_klarna_gateway.cypher.key',
-                $config['cypher']['key'] ?? ''
+                $cypherKey
             );
         }
 
         if (key_exists('checkout', $config)) {
+            /** @var string|null $checkoutUri */
+            $checkoutUri = $config['checkout']['uri'] ?? '';
             $container->setParameter(
                 'north_creation_agency_sylius_klarna_gateway.checkout.uri',
-                $config['checkout']['uri'] ?? ''
+                $checkoutUri
             );
         }
     }

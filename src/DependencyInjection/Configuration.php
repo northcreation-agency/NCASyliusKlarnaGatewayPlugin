@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
     /**
-     * @psalm-suppress UnusedVariable
+     * @psalm-suppress UnusedVariable, MixedMethodCall, PossiblyUndefinedMethod
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('north_creation_agency_sylius_klarna_gateway');
-        $treeBuilder->getRootNode()
+
+        $rootNode = $treeBuilder->getRootNode();
+
+        $rootNode
             ->children()
                 ->arrayNode('cypher')
                     ->children()
