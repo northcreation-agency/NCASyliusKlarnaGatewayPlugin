@@ -54,7 +54,6 @@ class KlarnaRequestStructure
         assert(is_string($referenceNumber));
 
         $channel = $this->order->getChannel();
-        $allowedCountries = AllowedCountriesRetriever::getCountryCodes($channel);
 
         $requestStructure = [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
@@ -66,7 +65,6 @@ class KlarnaRequestStructure
             'merchant_urls' => $this->merchantData->toArray(),
             'billing_address' => $billingAddressData->toArray(),
             'merchant_reference1' => $referenceNumber,
-            'billing_countries' => $allowedCountries
         ];
 
         if ($shippingAddress !== null) {
