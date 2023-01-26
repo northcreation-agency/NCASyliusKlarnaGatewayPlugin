@@ -87,6 +87,9 @@ where to paste the widget:
 
 ```
 
+After the purchase has been handled by Klarna and redirected to the checkout page, you may now confirm that the purchase 
+has been correctly handled, you may retrieve the order-status to `/checkout/v3/orders/{klarna-order-id}`, which will 
+contain the confirmation snippet. Paste this is a similar fashion as the one before.
 
 ## Credentials encryption
 Makes use of `defuse/php-encryption` to encrypt the credentials. 
