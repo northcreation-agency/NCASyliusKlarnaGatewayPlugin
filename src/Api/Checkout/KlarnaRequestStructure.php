@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\AllowedCountriesRetriever;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
@@ -40,7 +41,22 @@ class KlarnaRequestStructure
         assert(is_string($locale));
         $locale = str_replace('_', '-', $locale);
 
-        return [
+        $shippingAddress = $this->order->getShippingAddress();
+
+        $billingAddress = $this->order->getBillingAddress();
+        if ($billingAddress === null) {
+            throw new \Exception('Could not find a billing address!');
+        }
+
+        $billingAddressData = new AddressData($billingAddress);
+
+        $referenceNumber = $this->order->getNumber();
+        assert(is_string($referenceNumber));
+
+        $channel = $this->order->getChannel();
+        $allowedCountries = AllowedCountriesRetriever::getCountryCodes($channel);
+
+        $requestStructure = [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
             'locale' => $locale,
@@ -48,7 +64,18 @@ class KlarnaRequestStructure
             'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
             'merchant_urls' => $this->merchantData->toArray(),
+            'billing_address' => $billingAddressData->toArray(),
+            'merchant_reference1' => $referenceNumber,
+            'billing_countries' => $allowedCountries
         ];
+
+        if ($shippingAddress !== null) {
+            $shippingAddressData = new AddressData($shippingAddress);
+
+            $requestStructure['shipping_address'] = $shippingAddressData->toArray();
+        }
+
+        return $requestStructure;
     }
 
     /**
