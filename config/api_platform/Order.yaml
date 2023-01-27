@@ -18,24 +18,3 @@ Sylius\Component\Core\Model\Order:
                                             type: string
                                             description: 'The Klarna checkout snippet'
                                             example: '<div id="klarna-checkout-container"></div>'
-        shop_klarna_checkout_push:
-            method: 'POST'
-            path: 'shop/orders/{tokenValue}/push'
-            controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::handlePush
-            openapi_context:
-                summary: Klarna push confirmation route. Klarna will make a POST request to this endpoint when it confirms a payment has been processed. Acknowledgement is sent back in return.
-                responses:
-                    204:
-                        description: 'OK'
-                    404:
-                        description: 'Could not find resource'
-                    500:
-                        description: 'Server error'
-                parameters:
-                    - in: query
-                      name: klarna_order_id
-                      schema:
-                          type: string
-                schema:
-                        
-            

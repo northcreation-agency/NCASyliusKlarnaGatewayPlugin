@@ -36,6 +36,15 @@ north_creation_agency_sylius_klarna_gateway:
 ```
 
 ### Routes
+Default Sylius Klarna routes are imported in your app's routes.yaml file:
+```yaml 
+app_klarna:
+    resource: '@NorthCreationAgencySyliusKlarnaGatewayPlugin/config/klarna_routes.yaml'
+```
+This will add:   
+* `klarna-checkout/push`: A POST endpoint for retrieving and confirming Klarna Push request
+
+**API endpoints**  
 In _plugin development_ environment, the api-config is imported by adding the following to 
 api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
 ```yaml

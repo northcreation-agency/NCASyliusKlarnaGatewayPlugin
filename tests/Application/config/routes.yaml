@@ -1,0 +1,2 @@
+app_klarna:
+    resource: '@NorthCreationAgencySyliusKlarnaGatewayPlugin/config/klarna_routes.yaml'

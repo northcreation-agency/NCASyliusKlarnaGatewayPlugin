@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -12,11 +13,16 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStru
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use SM\Factory\FactoryInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
+use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
+use Sylius\Component\Payment\PaymentTransitions;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,7 +45,9 @@ class KlarnaCheckoutController extends AbstractController
         private Payum $payum,
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
-        private CalculatorInterface $taxCalculator
+        private CalculatorInterface $taxCalculator,
+        private FactoryInterface $stateMachineFactory,
+        private EntityManagerInterface $entityManager
     ) {
     }
 
@@ -147,8 +155,12 @@ class KlarnaCheckoutController extends AbstractController
         );
     }
 
-    public function handlePush(string $tokenValue, Request $request): Response
+    public function handlePush(Request $request, ?string $tokenValue = null): Response
     {
+        if ($tokenValue === null) {
+            $tokenValue = $request->query->get('token_value');
+        }
+
         /** @var ?OrderInterface $order */
         $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
         if (null === $order) {
@@ -170,13 +182,13 @@ class KlarnaCheckoutController extends AbstractController
         /** @var string $pushConfirmationUrl */
         $pushConfirmationUrl = $this->replacePlaceholder($klarnaOrderId, $pushConfirmationUrlTemplate);
 
+        /** @var PaymentInterface $payment */
+        $payment = $order->getPayments()->first();
+
+        /** @var ?PaymentMethodInterface $method */
+        $method = $payment->getMethod();
+
         try {
-            /** @var PaymentInterface $payment */
-            $payment = $order->getPayments()->first();
-
-            /** @var ?PaymentMethodInterface $method */
-            $method = $payment->getMethod();
-
             $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
 
             $response = $this->client->request(
@@ -193,7 +205,25 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['message' => 'Something went wrong'], 500);
         }
 
-        return new JsonResponse(null, 204);
+        $status = $response->getStatusCode();
+        if ($status === 204) {
+            $paymentStatus = $payment->getDetails()['status'] ?? null;
+            $this->updateStatus($order, $paymentStatus);
+        }
+
+        $this->entityManager->flush();
+
+        return new JsonResponse(null, $status);
+    }
+
+    public function updateStatus(OrderInterface $order, int $status): void
+    {
+        $stateMachine = $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH);
+        $stateMachine->apply(OrderPaymentTransitions::TRANSITION_PAY);
+
+        $latestPayment = $order->getLastPayment();
+        $stateMachine = $this->stateMachineFactory->get($latestPayment, PaymentTransitions::GRAPH);
+        $stateMachine->apply(PaymentTransitions::TRANSITION_COMPLETE);
     }
 
     /**
@@ -265,20 +295,29 @@ class KlarnaCheckoutController extends AbstractController
         return $payumCaptureUrl;
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws \Exception
+     */
     protected function getPushUrl(OrderInterface $order): string
     {
         $router = $this->container->get('router');
         assert($router instanceof \Symfony\Component\Routing\RouterInterface);
 
         $pushUrl = $router->generate(
-            'api_orders_shop_klarna_checkout_push_item',
-            [
-                'tokenValue' => $order->getTokenValue()
-            ],
+            'north_creation_agency_sylius_klarna_gateway_push',
+            [],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
 
+        $tokenValue = $order->getTokenValue();
+        if ($tokenValue === null) {
+            throw new \Exception('No order token was found.');
+        }
+
         $pushUrl .= '?klarna_order_id={checkout.order.id}';
+        $pushUrl .= '&token_value=' . $tokenValue;
 
         return $pushUrl;
     }
