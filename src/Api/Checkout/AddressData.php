@@ -11,8 +11,8 @@ class AddressData
 {
     public function __construct(
         private AddressInterface $address,
-        private ?CustomerInterface $customer = null
-    ){
+        private ?CustomerInterface $customer = null,
+    ) {
         if ($customer === null) {
             $this->customer = $this->address->getCustomer();
         }
@@ -28,7 +28,6 @@ class AddressData
 
         $countryCode = $this->address->getCountryCode() ?? '';
 
-
         return [
             'given_name' => $this->address->getFirstName(),
             'family_name' => $this->address->getLastName(),
@@ -39,8 +38,7 @@ class AddressData
             'city' => $this->address->getCity(),
             'region' => $this->address->getProvinceName(),
             'country' => strtolower($countryCode),
-            'phone' => $phone
+            'phone' => $phone,
         ];
     }
-
 }

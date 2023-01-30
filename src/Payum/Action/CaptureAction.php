@@ -55,7 +55,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
             merchantData:  new MerchantData('example.com', 'example.com', 'example.com', 'example.com'),
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator
+            taxCalculator: $this->taxCalculator,
         );
 
         /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */

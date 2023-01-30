@@ -45,6 +45,8 @@ class OrderLine extends AbstractLineItem
         assert($taxRate instanceof TaxRateInterface);
         $tax = $taxCalculator->calculate($orderItem->getTotal(), $taxRate);
 
+        $orderItemTotal = $orderItem->getTotal();
+
         $this->type = $type;
         $this->reference = $variantCode;
         $this->name = $orderName . ' - ' . $variantName;
@@ -52,9 +54,9 @@ class OrderLine extends AbstractLineItem
         $this->quantityUnit = 'pcs';
         $this->unitPrice = $orderItem->getUnitPrice();
         $this->taxRate = (int) ($taxRateFloat * 100 * 100);
-        $this->totalAmount = $orderItem->getTotal();
-        $this->totalDiscountAmount = $orderItem->getTotal() - ($this->quantity * $orderItem->getDiscountedUnitPrice());
-        $this->totalTaxAmount = (int)($tax);
+        $this->totalAmount = $orderItemTotal;
+        $this->totalDiscountAmount = $this->quantity * ($orderItemTotal - $orderItem->getDiscountedUnitPrice());
+        $this->totalTaxAmount = (int) ($tax);
     }
 
     public function getLineItem(): LineItemInterface

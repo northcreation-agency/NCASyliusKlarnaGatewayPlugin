@@ -67,42 +67,55 @@ class KlarnaRequestStructureTest extends TestCase
 
         $expectedStructure = [
             "purchase_country" => "GB",
-                  "purchase_currency" => "GBP",
-                  "locale" => "en-GB",
-                  "order_amount" => 50000,
-                  "order_tax_amount" => 5545,
-                  "order_lines" => [
-                      [
-                          "type" => "physical",
-                          "reference" => "19-402-USA",
-                          "name" => "T-Shirt - Red",
-                          "quantity" => 5,
-                          "quantity_unit" => "pcs",
-                          "unit_price" => 10000,
-                          "tax_rate" => 1000,
-                          "total_amount" => 50000,
-                          "total_discount_amount" => 0,
-                          "total_tax_amount" => 4545
-                      ],
-                      [
-                          'type' => 'shipping_fee',
-                          'reference' => 'test',
-                          'name' => 'test',
-                          'quantity' => 1,
-                          'quantity_unit' => 'pcs',
-                          'unit_price' => 11000,
-                          'tax_rate' => 1000,
-                          'total_amount' => 11000,
-                          'total_discount_amount' => 0,
-                          'total_tax_amount' => 1000,
-                      ]
-                ],
-                    "merchant_urls" => [
-                        "terms" => "https://www.example.com/terms.html",
-                        "checkout" => "https://www.example.com/checkout.html?order_id={checkout.order.id}",
-                        "confirmation" => "https://www.example.com/confirmation.html?order_id={checkout.order.id}",
-                        "push" => "https://www.example.com/api/push?order_id={checkout.order.id}"
-                    ]
+            "purchase_currency" => "GBP",
+            "locale" => "en-GB",
+            "order_amount" => 50000,
+            "order_tax_amount" => 5545,
+            "order_lines" => [
+                  [
+                      "type" => "physical",
+                      "reference" => "19-402-USA",
+                      "name" => "T-Shirt - Red",
+                      "quantity" => 5,
+                      "quantity_unit" => "pcs",
+                      "unit_price" => 10000,
+                      "tax_rate" => 1000,
+                      "total_amount" => 50000,
+                      "total_discount_amount" => 0,
+                      "total_tax_amount" => 4545
+                  ],
+                  [
+                      'type' => 'shipping_fee',
+                      'reference' => 'test',
+                      'name' => 'test',
+                      'quantity' => 1,
+                      'quantity_unit' => 'pcs',
+                      'unit_price' => 11000,
+                      'tax_rate' => 1000,
+                      'total_amount' => 11000,
+                      'total_discount_amount' => 0,
+                      'total_tax_amount' => 1000,
+                  ]
+            ],
+            "merchant_urls" => [
+                "terms" => "https://www.example.com/terms.html",
+                "checkout" => "https://www.example.com/checkout.html?order_id={checkout.order.id}",
+                "confirmation" => "https://www.example.com/confirmation.html?order_id={checkout.order.id}",
+                "push" => "https://www.example.com/api/push?order_id={checkout.order.id}"
+            ],
+            "merchant_reference1" => "000001",
+            "billing_address" => [
+                "given_name" => null,
+                "family_name" => null,
+                "organization_name" => null,
+                "email" => null,
+                "street_address" => null,
+                "postal_code" => null,
+                "city" => null,
+                "region" => null,
+                "country" => "gb",
+                "phone" => "",
+            ],
         ];
 
         $actualStructure = $this->klarnaRequestStructure->toArray();
@@ -144,6 +157,9 @@ class KlarnaRequestStructureTest extends TestCase
 
         $order->method('getShipments')
             ->willReturn($this->createShipments());
+
+        $order->method('getNumber')
+            ->willReturn('000001');
 
 
         return $order;

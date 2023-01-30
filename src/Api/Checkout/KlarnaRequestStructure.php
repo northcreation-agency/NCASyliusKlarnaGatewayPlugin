@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\AllowedCountriesRetriever;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
@@ -17,7 +16,7 @@ class KlarnaRequestStructure
         private MerchantData $merchantData,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
-        private CalculatorInterface $taxCalculator
+        private CalculatorInterface $taxCalculator,
     ) {
     }
 
@@ -54,8 +53,6 @@ class KlarnaRequestStructure
         $referenceNumber = $this->order->getNumber();
         assert(is_string($referenceNumber));
 
-        $channel = $this->order->getChannel();
-
         $requestStructure = [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
@@ -79,7 +76,6 @@ class KlarnaRequestStructure
 
     /**
      * @param AbstractLineItem[] $orderLines
-     * @return int
      */
     protected function getTaxTotal(array $orderLines): int
     {
@@ -111,7 +107,7 @@ class KlarnaRequestStructure
                 $this->taxRateResolver,
                 $this->taxCalculator,
                 'physical',
-                $currentLocale
+                $currentLocale,
             );
         }
 

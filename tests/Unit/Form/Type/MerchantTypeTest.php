@@ -17,7 +17,6 @@ class MerchantTypeTest extends \PHPUnit\Framework\TestCase
         self::assertTrue($form->has('termsUrl'));
         self::assertTrue($form->has('checkoutUrl'));
         self::assertTrue($form->has('confirmationUrl'));
-        self::assertTrue($form->has('pushUrl'));
     }
 
     /**

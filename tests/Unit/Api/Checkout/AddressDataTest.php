@@ -46,6 +46,7 @@ class AddressDataTest extends TestCase
             'city' => 'London',
             'region' => null,
             'country' => 'gb',
+            'phone' => '+46701234567'
         ];
 
         $actual = $this->addressData->toArray();

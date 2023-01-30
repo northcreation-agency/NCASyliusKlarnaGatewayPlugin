@@ -22,10 +22,12 @@ use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
+use Sylius\Component\Payment\Model\PaymentInterface as PaymentInterfaceAlias;
 use Sylius\Component\Payment\PaymentTransitions;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,12 +49,13 @@ class KlarnaCheckoutController extends AbstractController
         private ClientInterface $client,
         private CalculatorInterface $taxCalculator,
         private FactoryInterface $stateMachineFactory,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
     /**
      * @psalm-suppress UndefinedClass
+     *
      * @throws \Exception
      */
     public function getSnippet(string $tokenValue): Response
@@ -99,6 +102,7 @@ class KlarnaCheckoutController extends AbstractController
         $klarnaOrderId = null;
         $errorMessage = '';
         $requestStatus = 200;
+
         try {
             $response = $this->client->request(
                 'POST',
@@ -121,9 +125,8 @@ class KlarnaCheckoutController extends AbstractController
             /** @var string $snippet */
             $snippet = $contents[self::WIDGET_SNIPPET_KEY] ?? throw new \Exception(
                 'Expected to find key ' . self::WIDGET_SNIPPET_KEY . ' but none were found in response.',
-                500
+                500,
             );
-
         } catch (RequestException $e) {
             $response = $e->getResponse();
             $requestStatus = $response !== null ? $response->getStatusCode() : 403;
@@ -139,7 +142,7 @@ class KlarnaCheckoutController extends AbstractController
         if (strlen($errorMessage) > 0) {
             return new JsonResponse(
                 ['error_message' => $errorMessage],
-                $requestStatus
+                $requestStatus,
             );
         }
 
@@ -150,7 +153,7 @@ class KlarnaCheckoutController extends AbstractController
         return new JsonResponse(
             [
                 'snippet' => $snippet,
-                'request_structure' => $requestData
+                'request_structure' => $requestData,
             ],
         );
     }
@@ -170,23 +173,34 @@ class KlarnaCheckoutController extends AbstractController
         $klarnaOrderId = $request->query->get('klarna_order_id');
         if ($klarnaOrderId === null) {
             return new JsonResponse([
-                'message' => 'No order was referenced. Expected klarna_order_id query parameter'
+                'message' => 'No order was referenced. Expected klarna_order_id query parameter',
             ], 404);
         }
 
-        /** @var string $pushConfirmationUrl */
-        $pushConfirmationUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation'
-        );
+        try {
+            /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
+            $pushConfirmationUrlTemplate = $this->parameterBag->get(
+                'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
+            );
+            assert(is_string($pushConfirmationUrlTemplate));
+        } catch (ParameterNotFoundException $exception) {
+            return new JsonResponse([
+                'message' => 'Payment gateway not correctly configured. Make sure push_confirmation is set.',
+            ], 500);
+        }
 
-        /** @var string $pushConfirmationUrl */
-        $pushConfirmationUrl = $this->replacePlaceholder($klarnaOrderId, $pushConfirmationUrlTemplate);
+        $pushConfirmationUrl = $this->replacePlaceholder('' . $klarnaOrderId, $pushConfirmationUrlTemplate);
 
         /** @var PaymentInterface $payment */
         $payment = $order->getPayments()->first();
 
         /** @var ?PaymentMethodInterface $method */
         $method = $payment->getMethod();
+        if (null === $method) {
+            return new JsonResponse([
+                'message' => 'No associated payment method could be found',
+            ], 404);
+        }
 
         try {
             $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
@@ -199,7 +213,7 @@ class KlarnaCheckoutController extends AbstractController
                         'Authorization' => $basicAuthString,
                         'Content-Type' => 'application/json',
                     ],
-                ]
+                ],
             );
         } catch (\Exception $e) {
             return new JsonResponse(['message' => 'Something went wrong'], 500);
@@ -207,8 +221,10 @@ class KlarnaCheckoutController extends AbstractController
 
         $status = $response->getStatusCode();
         if ($status === 204) {
-            $paymentStatus = $payment->getDetails()['status'] ?? null;
-            $this->updateStatus($order, $paymentStatus);
+            $paymentState = $payment->getState();
+            if ($paymentState !== PaymentInterfaceAlias::STATE_COMPLETED) {
+                $this->updateState($order);
+            }
         }
 
         $this->entityManager->flush();
@@ -216,12 +232,16 @@ class KlarnaCheckoutController extends AbstractController
         return new JsonResponse(null, $status);
     }
 
-    public function updateStatus(OrderInterface $order, int $status): void
+    public function updateState(OrderInterface $order): void
     {
         $stateMachine = $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH);
         $stateMachine->apply(OrderPaymentTransitions::TRANSITION_PAY);
 
         $latestPayment = $order->getLastPayment();
+        if (null === $latestPayment) {
+            return;
+        }
+
         $stateMachine = $this->stateMachineFactory->get($latestPayment, PaymentTransitions::GRAPH);
         $stateMachine->apply(PaymentTransitions::TRANSITION_COMPLETE);
     }
@@ -260,18 +280,24 @@ class KlarnaCheckoutController extends AbstractController
             return null;
         }
 
+        $order = $payment->getOrder();
+        if (null === $order) {
+            return null;
+        }
+
         /** @var string|null $pushUrl */
-        $pushUrl = $this->getPushUrl($payment->getOrder());
+        $pushUrl = $this->getPushUrl($order);
 
         /** @var string|null $termsUrl */
         $termsUrl = $merchantData['termsUrl'] ?? null;
 
+        /** @var string|null $checkoutUrl */
         $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
         /** @var string|null $confirmationUrl */
         $confirmationUrl = $this->getPayumCaptureDoUrl($payment);
 
-        if (null === $termsUrl || null === $confirmationUrl || null === $pushUrl) {
+        if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;
         }
 
@@ -333,10 +359,14 @@ class KlarnaCheckoutController extends AbstractController
         $payment->setDetails($details);
     }
 
-    public function replacePlaceholder($replacement, $string): string
+    public function replacePlaceholder(string $replacement, string $string): string
     {
         $strStart = strpos($string, '{');
         $strEnd = strpos($string, '}');
+
+        if ($strStart === false || $strEnd === false) {
+            return $string;
+        }
 
         return substr_replace($string, $replacement, $strStart, $strEnd - $strStart + 1);
     }
