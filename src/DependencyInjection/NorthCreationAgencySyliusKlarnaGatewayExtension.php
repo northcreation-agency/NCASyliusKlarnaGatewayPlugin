@@ -27,28 +27,34 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
         $container->resolveEnvPlaceholders(true);
 
         if (array_key_exists('cypher', $config)) {
-            /** @var string $cypherKey */
-            $cypherKey = $config['cypher']['key'] ?? '';
-            $container->setParameter(
-                'north_creation_agency_sylius_klarna_gateway.cypher.key',
-                $cypherKey,
-            );
+            if (is_array($config['cypher']) && array_key_exists('key', $config['cypher'])) {
+                /** @var string $cypherKey */
+                $cypherKey = $config['cypher']['key'] ?? '';
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.cypher.key',
+                    $cypherKey,
+                );
+            }
         }
 
         if (array_key_exists('checkout', $config)) {
-            /** @var string|null $checkoutUri */
-            $checkoutUri = $config['checkout']['uri'] ?? '';
-            $container->setParameter(
-                'north_creation_agency_sylius_klarna_gateway.checkout.uri',
-                $checkoutUri,
-            );
+            if (is_array($config['checkout']) && array_key_exists('uri', $config['checkout'])) {
+                /** @var string|null $checkoutUri */
+                $checkoutUri = $config['checkout']['uri'] ?? '';
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.checkout.uri',
+                    $checkoutUri,
+                );
+            }
 
-            /** @var string|null $pushConfirmation */
-            $pushConfirmation = $config['checkout']['push_confirmation'] ?? '';
-            $container->setParameter(
-                'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
-                $pushConfirmation,
-            );
+            if (is_array($config['checkout']) && array_key_exists('push_confirmation', $config['checkout'])) {
+                /** @var string|null $pushConfirmation */
+                $pushConfirmation = $config['checkout']['push_confirmation'] ?? '';
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
+                    $pushConfirmation,
+                );
+            }
         }
     }
 
