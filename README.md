@@ -45,6 +45,30 @@ This will add:
 * `klarna-checkout/push`: A POST endpoint for retrieving and confirming Klarna Push request
 
 **API endpoints**  
+Add the following to _./config/api_platform/Order.yaml_:
+```yaml
+App\Model\Order\Order:
+    itemOperations:
+        shop_klarna_widget:
+            method: 'GET'
+            path: 'shop/orders/{tokenValue}/klarna-widget'
+            controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::getSnippet
+            openapi_context:
+                summary: Returns a Klarna checkout snippet
+                responses:
+                    200:
+                        description: 'OK'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        snippet:
+                                            type: string
+                                            description: 'The Klarna checkout snippet'
+                                            example: '<div id="klarna-checkout-container"></div>'
+```
+
 In _plugin development_ environment, the api-config is imported by adding the following to 
 api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
 ```yaml
@@ -54,7 +78,7 @@ api_platform.mapping.paths in tests/Application/config/packages/api_platform.yam
 In a _project using the plugin_, the api-config is imported by adding the following to
 api_platform.mapping.paths in tests/Application/config/packages/api_platform.yaml:
 ```yaml
-- '%kernel.project_dir%/../../vendor/andersbjorkland/sylius-klarna-gateway-plugin/config/api_platform'
+- '%kernel.project_dir%/vendor/andersbjorkland/sylius-klarna-gateway-plugin/config/api_platform'
 ```
 
 ### Template
