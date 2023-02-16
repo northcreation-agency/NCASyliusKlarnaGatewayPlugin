@@ -247,12 +247,11 @@ class KlarnaCheckoutController extends AbstractController
     }
 
     /**
-     * @psalm-suppress DeprecatedClass
-     *
      * @throws \InvalidArgumentException
      */
     protected function getToken(PaymentInterface $payment): TokenInterface
     {
+        /** @psalm-suppress DeprecatedInterface */
         $tokenFactory = $this->payum->getTokenFactory();
         $paymentMethod = $payment->getMethod();
         Assert::isInstanceOf($paymentMethod, PaymentMethodInterface::class);
