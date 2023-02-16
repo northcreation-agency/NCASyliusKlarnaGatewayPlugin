@@ -25,19 +25,29 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
+        $this->definedSetUp(includeTaxInPrice: true);
+    }
+
+    protected function definedSetUp(
+        bool $includeTaxInPrice = true,
+        int $variantPrice = 10000,
+        bool $hasTax = true
+    ): void
+    {
         $taxRateMock = $this->createMock(TaxRate::class);
-        $taxRateMock->method('getAmount')->willReturn(0.1);
+        $taxRateMock->method('getAmount')->willReturn($hasTax ? 0.1 : 0.0);
+        $taxRateMock->method('isIncludedInPrice')->willReturn($hasTax ? $includeTaxInPrice : true);
 
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
-        $taxRateResolver->method('resolve')->willReturn($taxRateMock);
+        $taxRateResolver->method('resolve')->willReturn($hasTax ? $taxRateMock : null);
 
         $taxCalculator = $this->createMock(CalculatorInterface::class);
         $taxCalculator
             ->method('calculate')
-            ->willReturn(4545.0);
+            ->willReturn($hasTax ? 909.0 : 0.0);
 
         try {
-            $this->orderLine = new OrderLine($this->createOrderItem(), $taxRateResolver, $taxCalculator);
+            $this->orderLine = new OrderLine($this->createOrderItem($variantPrice), $taxRateResolver, $taxCalculator);
         } catch (\Exception $e) {
             Assert::fail($e->getMessage());
         }
@@ -63,12 +73,58 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         Assert::assertEquals($expectedStructure, $actualStructure);
     }
 
-    protected function createOrderItem(): OrderItemInterface
+    public function testTaxNotIncludedInVariantPriceIsIncludedInOrderLineUnitPrice(): void
+    {
+        $variantPrice = 9091; // for a rate at 10%, a tax amount will equal 909 per item.
+        $this->definedSetUp(includeTaxInPrice: false, variantPrice: $variantPrice);
+
+
+        $expectedStructure = [
+            "type" => "physical",
+            "reference" => "19-402-USA",
+            "name" => "T-Shirt - Red",
+            "quantity" => 5,
+            "quantity_unit" => "pcs",
+            "unit_price" => 10000,
+            "tax_rate" => 1000,
+            "total_amount" => 50000,
+            "total_discount_amount" => 0,
+            "total_tax_amount" => 4545
+        ];
+
+        $actualStructure = $this->orderLine->toArray();
+
+        self::assertEquals($expectedStructure, $actualStructure);
+    }
+
+    public function testNoAssociatedTaxThrowsNoError(): void
+    {
+        $this->definedSetUp(hasTax: false);
+
+        $expectedStructure = [
+            "type" => "physical",
+            "reference" => "19-402-USA",
+            "name" => "T-Shirt - Red",
+            "quantity" => 5,
+            "quantity_unit" => "pcs",
+            "unit_price" => 10000,
+            "tax_rate" => 0,
+            "total_amount" => 50000,
+            "total_discount_amount" => 0,
+            "total_tax_amount" => 0
+        ];
+
+        $actualStructure = $this->orderLine->toArray();
+
+        Assert::assertEquals($expectedStructure, $actualStructure);
+    }
+
+    protected function createOrderItem(int $variantPrice = 10000): OrderItemInterface
     {
         $orderItemMock = $this->createMock(OrderItem::class);
 
         $product = $this->createProduct();
-        $variant = $this->createProductVariant($product);
+        $variant = $this->createProductVariant($product, $variantPrice);
         $orderItemMock->method('getVariant')
             ->willReturn($variant);
         $orderItemMock->method('getVariantName')
@@ -80,7 +136,7 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $orderItemMock->method('getTotal')
             ->willReturn(50000);
         $orderItemMock->method('getUnitPrice')
-            ->willReturn(10000);
+            ->willReturn($variantPrice);
         $orderItemMock->method('getTaxTotal')
             ->willReturn(4545);
         $orderItemMock->method('getDiscountedUnitPrice')
@@ -104,7 +160,7 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         return $product;
     }
 
-    protected function createProductVariant(Product $product): ProductVariant
+    protected function createProductVariant(Product $product, $variantPrice): ProductVariant
     {
         $productVariant = new ProductVariant();
         $productVariant->setCode('19-402-USA');
@@ -121,7 +177,7 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
 
         $channelPricing = new ChannelPricing();
         $channelPricing->setChannelCode('WEB_GB');
-        $channelPricing->setPrice(10000);
+        $channelPricing->setPrice($variantPrice);
         $channelPricing->setProductVariant($productVariant);
 
         return $productVariant;

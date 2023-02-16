@@ -6,7 +6,6 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
-use Sylius\Component\Taxation\Model\TaxRateInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class OrderLine extends AbstractLineItem
@@ -42,8 +41,17 @@ class OrderLine extends AbstractLineItem
         $taxRateFloat = $taxRateResolver->resolve($variant)?->getAmount() ?? 0.0;
         $taxRate = $taxRateResolver->resolve($variant);
 
-        assert($taxRate instanceof TaxRateInterface);
-        $tax = $taxCalculator->calculate($orderItem->getTotal(), $taxRate);
+        $itemUnitPrice = $orderItem->getUnitPrice();
+
+        if ($taxRate !== null) {
+            $unitTax = $taxCalculator->calculate($itemUnitPrice, $taxRate);
+            $taxIsIncluded = $taxRate->isIncludedInPrice();
+            $totalTax = $unitTax * $orderItem->getQuantity();
+            $unitPrice = $taxIsIncluded ? $itemUnitPrice : $itemUnitPrice + $unitTax;
+        } else {
+            $totalTax = 0;
+            $unitPrice = $itemUnitPrice;
+        }
 
         $orderItemTotal = $orderItem->getTotal();
 
@@ -52,11 +60,11 @@ class OrderLine extends AbstractLineItem
         $this->name = $orderName . ' - ' . $variantName;
         $this->quantity = $orderItem->getQuantity();
         $this->quantityUnit = 'pcs';
-        $this->unitPrice = $orderItem->getUnitPrice();
+        $this->unitPrice = (int) $unitPrice;
         $this->taxRate = (int) ($taxRateFloat * 100 * 100);
         $this->totalAmount = $orderItemTotal;
         $this->totalDiscountAmount = $this->quantity * ($orderItemTotal - $orderItem->getDiscountedUnitPrice());
-        $this->totalTaxAmount = (int) ($tax);
+        $this->totalTaxAmount = (int) ($totalTax);
     }
 
     public function getLineItem(): LineItemInterface
