@@ -1,0 +1,4 @@
+secret:
+    ignored-matches:
+        - name:
+          match: $ecretf0rt3st
