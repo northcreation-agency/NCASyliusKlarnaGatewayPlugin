@@ -47,11 +47,12 @@ class KlarnaRequestStructureTest extends TestCase
 
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
+        $taxRateMock->method('isIncludedInPrice')->willReturn(true);
 
         $taxCalculator = $this->createMock(CalculatorInterface::class);
         $taxCalculator
             ->method('calculate')
-            ->willReturn(4545.0);
+            ->willReturn(909.0);
 
         $this->klarnaRequestStructure = new KlarnaRequestStructure(
             $this->order,
