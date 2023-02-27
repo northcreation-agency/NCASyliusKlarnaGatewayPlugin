@@ -141,6 +141,8 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
             ->willReturn(4545);
         $orderItemMock->method('getDiscountedUnitPrice')
             ->willReturn(50000);
+        $orderItemMock->method('getFullDiscountedUnitPrice')
+            ->willReturn($variantPrice);
 
         return $orderItemMock;
     }

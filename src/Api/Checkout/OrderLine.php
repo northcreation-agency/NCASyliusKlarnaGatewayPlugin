@@ -32,19 +32,19 @@ class OrderLine extends AbstractLineItem
         }
 
         $orderName = $orderItem->getProductName();
-        $variantName = $orderItem->getVariantName();
+        $variantName = $orderItem->getVariantName() ?? $orderName;
         if ($variantName === null || $orderName === null) {
             throw new \Exception('Product and variant must have a name');
         }
 
         // resolve tax rate
-        $taxRateFloat = $taxRateResolver->resolve($variant)?->getAmount() ?? 0.0;
         $taxRate = $taxRateResolver->resolve($variant);
+        $taxRateAmount = $taxRate !== null ? (int) ($taxRate->getAmount() * 100 * 100) : 0;
 
         $itemUnitPrice = $orderItem->getUnitPrice();
 
         if ($taxRate !== null) {
-            $unitTax = $taxCalculator->calculate($itemUnitPrice, $taxRate);
+            $unitTax = $taxCalculator->calculate($orderItem->getFullDiscountedUnitPrice(), $taxRate);
             $taxIsIncluded = $taxRate->isIncludedInPrice();
             $totalTax = $unitTax * $orderItem->getQuantity();
             $unitPrice = $taxIsIncluded ? $itemUnitPrice : $itemUnitPrice + $unitTax;
@@ -54,16 +54,16 @@ class OrderLine extends AbstractLineItem
         }
 
         $orderItemTotal = $orderItem->getTotal();
-
         $this->type = $type;
         $this->reference = $variantCode;
         $this->name = $orderName . ' - ' . $variantName;
         $this->quantity = $orderItem->getQuantity();
         $this->quantityUnit = 'pcs';
         $this->unitPrice = (int) $unitPrice;
-        $this->taxRate = (int) ($taxRateFloat * 100 * 100);
+        $this->taxRate = $taxRateAmount;
         $this->totalAmount = $orderItemTotal;
-        $this->totalDiscountAmount = $this->quantity * ($orderItemTotal - $orderItem->getDiscountedUnitPrice());
+        $unitDiscount = $itemUnitPrice - $orderItem->getFullDiscountedUnitPrice();
+        $this->totalDiscountAmount = $this->quantity * $unitDiscount;
         $this->totalTaxAmount = (int) ($totalTax);
     }
 
