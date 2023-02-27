@@ -202,6 +202,8 @@ class KlarnaRequestStructureTest extends TestCase
             ->willReturn(4545);
         $orderItemMock->method('getDiscountedUnitPrice')
             ->willReturn(50000);
+        $orderItemMock->method('getFullDiscountedUnitPrice')
+            ->willReturn(10000);
 
         return new ArrayCollection([$orderItemMock]);
     }
