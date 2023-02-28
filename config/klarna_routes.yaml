@@ -1,5 +1,18 @@
+north_creation_agency_sylius_klarna_gateway_confirm:
+    path: /klarna-checkout/confirm
+    methods: [GET]
+    defaults:
+        _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::confirm
+
 north_creation_agency_sylius_klarna_gateway_push:
     path: /klarna-checkout/push
     methods: [POST]
     defaults:
         _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::handlePush
+        
+north_creation_agency_sylius_klarna_gateway_widget:
+    path: /klarna-checkout/{tokenValue}/widget
+    methods: [GET]
+    defaults:
+        _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\WidgetRenderController::widget
+        

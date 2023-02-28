@@ -7,8 +7,6 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
@@ -18,9 +16,6 @@ use Payum\Core\Request\Capture;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
-use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
-use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class CaptureAction implements ActionInterface, ApiAwareInterface
@@ -30,10 +25,7 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
     public function __construct(
         private ClientInterface $client,
         private ParameterBagInterface $parameterBag,
-        private TaxRateResolverInterface $taxRateResolver,
-        private OrderProcessorInterface $shippingChargesProcessor,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
-        private CalculatorInterface $taxCalculator,
     ) {
         $this->api = null;
     }
@@ -46,56 +38,48 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
 
         /** @var SyliusPaymentInterface $payment */
         $payment = $request->getModel();
+        $paymentDetails = $payment->getDetails();
 
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
 
-        $requestStructure = new KlarnaRequestStructure(
-            order: $order,
-            merchantData:  new MerchantData('example.com', 'example.com', 'example.com', 'example.com'),
-            taxRateResolver: $this->taxRateResolver,
-            shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator,
-        );
-
-        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
-        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
-
-        assert(is_string($klarnaUri));
-
-        $method = $payment->getMethod();
-
-        assert($method instanceof PaymentMethodInterface);
-
-        $basicAuthentication = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
-        $response = null;
+        $status = 200;
 
         try {
-            $requestStructureArray = $requestStructure->toArray();
+            $method = $payment->getMethod();
+            assert($method instanceof PaymentMethodInterface);
+            $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
 
+            /** @var string $klarnaOrderId */
+            $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? '';
+
+            /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+             * @var string $pushConfirmationUrlTemplate
+             */
+            $pushConfirmationUrlTemplate = $this->parameterBag->get(
+                'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
+            );
+            $pushConfirmationUrl = $this->replacePlaceholder($klarnaOrderId, $pushConfirmationUrlTemplate);
             $response = $this->client->request(
                 'POST',
-                $klarnaUri,
+                $pushConfirmationUrl,
                 [
                     'headers' => [
-                        'Authorization' => $basicAuthentication,
+                        'Authorization' => $basicAuthString,
                         'Content-Type' => 'application/json',
                     ],
-                    'body' => json_encode($requestStructureArray),
                 ],
             );
+
+            $status = $response->getStatusCode();
         } catch (RequestException $e) {
             $response = $e->getResponse();
+            $status = $response?->getStatusCode() ?? 404;
         } catch (\Exception $e) {
-            $response = 500;
+            $status = 404;
         } finally {
-            if ($response instanceof \Psr\Http\Message\ResponseInterface) {
-                $responseCode = $response->getStatusCode();
-            } else {
-                $responseCode = 500;
-            }
-
-            $payment->setDetails(['status' => $responseCode]);
+            $paymentDetails['status'] = $status;
+            $payment->setDetails($paymentDetails);
         }
     }
 
@@ -116,5 +100,17 @@ class CaptureAction implements ActionInterface, ApiAwareInterface
     public function getApi(): ?KlarnaApi
     {
         return $this->api;
+    }
+
+    public function replacePlaceholder(string $replacement, string $string): string
+    {
+        $strStart = strpos($string, '{');
+        $strEnd = strpos($string, '}');
+
+        if ($strStart === false || $strEnd === false) {
+            return $string;
+        }
+
+        return substr_replace($string, $replacement, $strStart, $strEnd - $strStart + 1);
     }
 }
