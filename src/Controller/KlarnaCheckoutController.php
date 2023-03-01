@@ -160,7 +160,6 @@ class KlarnaCheckoutController extends AbstractController
         return new JsonResponse(
             [
                 'snippet' => $snippet,
-                'request_structure' => $requestData,
             ],
         );
     }
