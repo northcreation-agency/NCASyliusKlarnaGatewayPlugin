@@ -24,6 +24,10 @@ class UrlGenerator
             }
         }
 
+        if (str_starts_with($url, 'http')) {
+            return $url;
+        }
+
         $scheme = $context->getScheme();
         $host = $context->getHost();
         $https = $context->getHttpsPort();

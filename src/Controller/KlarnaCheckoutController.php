@@ -456,6 +456,16 @@ class KlarnaCheckoutController extends AbstractController
             return null;
         }
 
+        try {
+            /** @var RouterInterface $router */
+            $router = $this->container->get('router');
+            $urlGenerator = new UrlGenerator($router);
+            $termsUrl = $urlGenerator->generateAbsoluteURL($termsUrl);
+            $checkoutUrl = $urlGenerator->generateAbsoluteURL($checkoutUrl);
+        } catch (\Exception $e) {
+        }
+
+
         return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
     }
 
