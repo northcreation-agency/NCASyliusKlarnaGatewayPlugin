@@ -16,3 +16,9 @@ north_creation_agency_sylius_klarna_gateway_widget:
     defaults:
         _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\WidgetRenderController::widget
         
+north_creation_agency_sylius_klarna_gateway_confirmation_widget:
+    path: /klarna-checkout/{tokenValue}/confirmation-widget
+    methods: [GET]
+    defaults:
+        _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\WidgetRenderController::confirmationWidget
+        
