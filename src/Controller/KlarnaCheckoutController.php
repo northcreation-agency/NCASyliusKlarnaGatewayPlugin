@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
@@ -148,6 +149,12 @@ class KlarnaCheckoutController extends AbstractController
 
         if (is_string($klarnaOrderId)) {
             $this->addKlarnaReference($payment, $klarnaOrderId);
+            $this->entityManager->persist($payment);
+            if ($this->entityManager instanceof EntityManager) {
+                $this->entityManager->flush($payment);
+            } else {
+                $this->entityManager->flush();
+            }
         }
 
         return new JsonResponse(
@@ -156,6 +163,68 @@ class KlarnaCheckoutController extends AbstractController
                 'request_structure' => $requestData,
             ],
         );
+    }
+
+    public function confirm(Request $request): Response
+    {
+        $orderToken = $request->query->get('order_token') ?? '';
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
+
+        assert($order instanceof OrderInterface);
+
+        $payment = $order->getLastPayment();
+        assert($payment instanceof PaymentInterface);
+
+        $method = $payment->getMethod();
+        assert($method instanceof PaymentMethodInterface);
+
+        try {
+            $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+
+            $paymentDetails = $payment->getDetails();
+
+            /** @var string $klarnaOrderId */
+            $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? '';
+
+            /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+             * @var string $pushConfirmationUrlTemplate
+             */
+            $pushConfirmationUrlTemplate = $this->parameterBag->get(
+                'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
+            );
+            $pushConfirmationUrl = $this->replacePlaceholder($klarnaOrderId, $pushConfirmationUrlTemplate);
+            $response = $this->client->request(
+                'POST',
+                $pushConfirmationUrl,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                ],
+            );
+
+            $status = $response->getStatusCode();
+        } catch (\Exception $e) {
+            $status = 400;
+        }
+
+        if ($status === 204) {
+            $paymentState = $payment->getState();
+            if ($paymentState !== PaymentInterfaceAlias::STATE_COMPLETED) {
+                $this->updateState($order);
+            }
+        }
+
+        $this->entityManager->flush();
+
+        /** @var array $merchantData */
+        $merchantData = $method->getGatewayConfig()?->getConfig()['merchantUrls'] ?? [];
+
+        /** @var string $redirectUrl */
+        $redirectUrl = $merchantData['confirmationUrl'] ?? $this->generateUrl('sylius_shop_homepage');
+
+        return $this->redirect($redirectUrl);
     }
 
     public function handlePush(Request $request, ?string $tokenValue = null): Response
@@ -264,7 +333,8 @@ class KlarnaCheckoutController extends AbstractController
         return $tokenFactory->createCaptureToken(
             $gatewayName,
             $payment,
-            'sylius_shop_homepage',
+            'north_creation_agency_sylius_klarna_gateway_confirm',
+            ['order_token' => $payment->getOrder()?->getTokenValue()],
         );
     }
 
@@ -294,7 +364,11 @@ class KlarnaCheckoutController extends AbstractController
         $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
         /** @var string|null $confirmationUrl */
-        $confirmationUrl = $this->getPayumCaptureDoUrl($payment);
+        $confirmationUrl = $this->generateUrl(
+            'north_creation_agency_sylius_klarna_gateway_confirm',
+            ['order_token' => $payment->getOrder()?->getTokenValue() ?? ''],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
 
         if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;

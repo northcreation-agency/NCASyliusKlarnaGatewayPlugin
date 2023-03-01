@@ -42,15 +42,11 @@ services:
         arguments: [
             '@sylius.http_client',
             '@parameter_bag',
-            '@sylius.tax_rate_resolver',
-            '@sylius.order_processing.shipping_charges_processor',
             '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever',
-            '@sylius.tax_calculator'
         ]
         tags:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }
-    
-    
+
     north_creation_agency_sylius_klarna_gateway.cypher:
         class: Payum\Core\Bridge\Defuse\Security\DefuseCypher
         arguments: ['%north_creation_agency_sylius_klarna_gateway.cypher.key%']
