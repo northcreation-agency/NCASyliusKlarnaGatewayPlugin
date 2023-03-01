@@ -30,4 +30,22 @@ class WidgetRenderController extends \Symfony\Bundle\FrameworkBundle\Controller\
             ['snippet' => $snippet['snippet'] ?? ''],
         );
     }
+
+    public function confirmationWidget(string $tokenValue): Response
+    {
+        $snippetResponse = $this->klarnaCheckoutController->getConfirmationSnippet($tokenValue);
+        $content = $snippetResponse->getContent();
+
+        if ($content === false) {
+            $content = '';
+        }
+
+        /** @var array $data */
+        $data = json_decode($content, true);
+
+        return $this->render(
+            '@NorthCreationAgencySyliusKlarnaGatewayPlugin/widget.html.twig',
+            ['snippet' => $data['snippet'] ?? ''],
+        );
+    }
 }

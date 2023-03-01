@@ -12,6 +12,7 @@ use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
 use Psr\Container\ContainerExceptionInterface;
@@ -34,6 +35,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
 
 class KlarnaCheckoutController extends AbstractController
@@ -164,6 +166,79 @@ class KlarnaCheckoutController extends AbstractController
         );
     }
 
+    public function getConfirmationSnippet(string $tokenValue): Response
+    {
+        $payment = $this->getPaymentFromOrderToken($tokenValue);
+
+        assert($payment instanceof PaymentInterface);
+
+        $paymentDetails = $payment->getDetails();
+
+        /** @var ?string $klarnaOrderId */
+        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+
+        if ($klarnaOrderId === null) {
+            return new JsonResponse(
+                ['error' => 'No associated klarna reference id with current payment details'],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
+        }
+
+        /**
+         * @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         *
+         * @var string $klarnaUri
+         */
+        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
+        if (!str_ends_with($klarnaUri, '/')) {
+            $klarnaUri .= '/';
+        }
+        $klarnaUri .= $klarnaOrderId;
+
+        $paymentMethod = $payment->getMethod();
+        assert($paymentMethod instanceof PaymentMethodInterface);
+        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
+
+        $response = $this->client->request(
+            'GET',
+            $klarnaUri,
+            [
+                'headers' => [
+                'Authorization' => $basicAuthString,
+                'Content-Type' => 'application/json',
+                ],
+            ],
+        );
+
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode !== Response::HTTP_OK) {
+            return new JsonResponse(
+                ['error' => 'Could not retrieve order'],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $content = $response->getBody()->getContents();
+
+        /** @var array $data */
+        $data = json_decode($content, true);
+
+        /** @var ?string $snippet */
+        $snippet = $data['html_snippet'] ?? null;
+        if ($snippet === null) {
+            return new JsonResponse(
+                ['error' => 'Confirmation snippet could not be retrieved.'],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        return new JsonResponse(
+            ['snippet' => $snippet],
+            Response::HTTP_OK,
+        );
+    }
+
     public function confirm(Request $request): Response
     {
         $orderToken = $request->query->get('order_token') ?? '';
@@ -222,6 +297,21 @@ class KlarnaCheckoutController extends AbstractController
 
         /** @var string $redirectUrl */
         $redirectUrl = $merchantData['confirmationUrl'] ?? $this->generateUrl('sylius_shop_homepage');
+
+        if (!str_starts_with($redirectUrl, 'http')) {
+            $router = null;
+
+            try {
+                /** @var RouterInterface $router */
+                $router = $this->container->get('router');
+            } catch (\Exception $e) {
+                $this->redirectToRoute('sylius_shop_homepage');
+            }
+
+            assert($router instanceof RouterInterface);
+            $urlGenerator = new UrlGenerator($router);
+            $redirectUrl = $urlGenerator->generateAbsoluteURL($redirectUrl, ['tokenValue' => $orderToken]);
+        }
 
         return $this->redirect($redirectUrl);
     }
@@ -373,6 +463,15 @@ class KlarnaCheckoutController extends AbstractController
             return null;
         }
 
+        try {
+            /** @var RouterInterface $router */
+            $router = $this->container->get('router');
+            $urlGenerator = new UrlGenerator($router);
+            $termsUrl = $urlGenerator->generateAbsoluteURL($termsUrl);
+            $checkoutUrl = $urlGenerator->generateAbsoluteURL($checkoutUrl);
+        } catch (\Exception $e) {
+        }
+
         return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
     }
 
@@ -418,6 +517,18 @@ class KlarnaCheckoutController extends AbstractController
         $pushUrl .= '&token_value=' . $tokenValue;
 
         return $pushUrl;
+    }
+
+    protected function getPaymentFromOrderToken(string $tokenValue): ?PaymentInterfaceAlias
+    {
+        /** @var ?OrderInterface $order */
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
+
+        assert($order instanceof OrderInterface);
+
+        $payment = $order->getPayments()->first();
+
+        return $payment !== false ? $payment : null;
     }
 
     private function addKlarnaReference(PaymentInterface $payment, string $reference): void
