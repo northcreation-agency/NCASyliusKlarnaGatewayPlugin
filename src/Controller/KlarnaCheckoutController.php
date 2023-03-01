@@ -175,19 +175,23 @@ class KlarnaCheckoutController extends AbstractController
 
         $paymentDetails = $payment->getDetails();
 
-        /** @var string $klarnaOrderId */
+        /** @var ?string $klarnaOrderId */
         $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
 
         if ($klarnaOrderId === null) {
             return new JsonResponse(
                 ['error' => 'No associated klarna reference id with current payment details'],
-                Response::HTTP_INTERNAL_SERVER_ERROR
+                Response::HTTP_INTERNAL_SERVER_ERROR,
             );
         }
 
-        /** @var string $klarnaUri */
+        /**
+         * @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         *
+         * @var string $klarnaUri
+         */
         $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
-        if (!str_ends_with('/', $klarnaUri)) {
+        if (!str_ends_with($klarnaUri, '/')) {
             $klarnaUri .= '/';
         }
         $klarnaUri .= $klarnaOrderId;
@@ -202,9 +206,9 @@ class KlarnaCheckoutController extends AbstractController
             [
                 'headers' => [
                 'Authorization' => $basicAuthString,
-                'Content-Type' => 'application/json'
-                ]
-            ]
+                'Content-Type' => 'application/json',
+                ],
+            ],
         );
 
         $statusCode = $response->getStatusCode();
@@ -212,26 +216,28 @@ class KlarnaCheckoutController extends AbstractController
         if ($statusCode !== Response::HTTP_OK) {
             return new JsonResponse(
                 ['error' => 'Could not retrieve order'],
-                Response::HTTP_BAD_REQUEST
+                Response::HTTP_BAD_REQUEST,
             );
         }
 
         $content = $response->getBody()->getContents();
+
+        /** @var array $data */
         $data = json_decode($content, true);
 
+        /** @var ?string $snippet */
         $snippet = $data['html_snippet'] ?? null;
         if ($snippet === null) {
             return new JsonResponse(
                 ['error' => 'Confirmation snippet could not be retrieved.'],
-                Response::HTTP_BAD_REQUEST
+                Response::HTTP_BAD_REQUEST,
             );
         }
 
         return new JsonResponse(
             ['snippet' => $snippet],
-            Response::HTTP_OK
+            Response::HTTP_OK,
         );
-
     }
 
     public function confirm(Request $request): Response
@@ -293,7 +299,9 @@ class KlarnaCheckoutController extends AbstractController
         /** @var string $redirectUrl */
         $redirectUrl = $merchantData['confirmationUrl'] ?? $this->generateUrl('sylius_shop_homepage');
 
-        if (!str_starts_with('http', $redirectUrl)) {
+        if (!str_starts_with($redirectUrl, 'http')) {
+            $router = null;
+
             try {
                 /** @var RouterInterface $router */
                 $router = $this->container->get('router');
@@ -465,7 +473,6 @@ class KlarnaCheckoutController extends AbstractController
         } catch (\Exception $e) {
         }
 
-
         return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
     }
 
@@ -513,14 +520,16 @@ class KlarnaCheckoutController extends AbstractController
         return $pushUrl;
     }
 
-    protected function getPaymentFromOrderToken(string $tokenValue): ?PaymentInterface
+    protected function getPaymentFromOrderToken(string $tokenValue): ?PaymentInterfaceAlias
     {
         /** @var ?OrderInterface $order */
         $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
 
         assert($order instanceof OrderInterface);
 
-        return $order->getPayments()->first();
+        $payment = $order->getPayments()->first();
+
+        return $payment !== false ? $payment : null;
     }
 
     private function addKlarnaReference(PaymentInterface $payment, string $reference): void

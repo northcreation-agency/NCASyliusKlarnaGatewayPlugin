@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router;
 
 use Symfony\Component\Routing\RouterInterface;
@@ -7,8 +9,9 @@ use Symfony\Component\Routing\RouterInterface;
 class UrlGenerator
 {
     public function __construct(
-        private RouterInterface $router
-    ){}
+        private RouterInterface $router,
+    ) {
+    }
 
     public function generateAbsoluteURL(string $url, array $replacementMap = []): string
     {

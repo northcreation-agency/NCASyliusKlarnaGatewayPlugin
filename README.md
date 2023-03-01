@@ -67,6 +67,24 @@ App\Model\Order\Order:
                                             type: string
                                             description: 'The Klarna checkout snippet'
                                             example: '<div id="klarna-checkout-container"></div>'
+        shop_klarna_confirmation_widget:
+            method: 'GET'
+            path: 'shop/orders/{tokenValue}/klarna-confirmation-widget'
+            controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::getConfirmationSnippet
+            openapi_context:
+                summary: Returns a Klarna checkout confirmation snippet
+                responses:
+                    200:
+                        description: 'OK'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        snippet:
+                                            type: string
+                                            description: 'The Klarna checkout confirmation snippet'
+                                            example: '<div id="klarna-checkout-container"></div>'
 ```
 
 In _plugin development_ environment, the api-config is imported by adding the following to 
