@@ -25,6 +25,7 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
+use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
@@ -73,6 +74,10 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Order not found'], 404);
         }
 
+        if ($order->getPaymentState() === OrderPaymentStates::STATE_PAID) {
+            return new JsonResponse(['error' => 'Payment already processed'], Response::HTTP_GONE);
+        }
+
         /** @var PaymentInterface $payment */
         $payment = $order->getPayments()->first();
 
@@ -94,6 +99,10 @@ class KlarnaCheckoutController extends AbstractController
 
         /** @var string $klarnaUri */
         $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
+        $klarnaOrderId = $this->getKlarnaReference($payment);
+        if ($klarnaOrderId !== null) {
+            $klarnaUri .= '/' . $klarnaOrderId;
+        }
 
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
@@ -106,7 +115,6 @@ class KlarnaCheckoutController extends AbstractController
         $requestData = $klarnaRequestStructure->toArray();
 
         $snippet = null;
-        $klarnaOrderId = null;
         $errorMessage = '';
         $requestStatus = 200;
 
@@ -302,26 +310,7 @@ class KlarnaCheckoutController extends AbstractController
 
         $this->entityManager->flush();
 
-        /** @var array $merchantData */
-        $merchantData = $method->getGatewayConfig()?->getConfig()['merchantUrls'] ?? [];
-
-        /** @var string $redirectUrl */
-        $redirectUrl = $merchantData['confirmationUrl'] ?? $this->generateUrl('sylius_shop_homepage');
-
-        if (!str_starts_with($redirectUrl, 'http')) {
-            $router = null;
-
-            try {
-                /** @var RouterInterface $router */
-                $router = $this->container->get('router');
-            } catch (\Exception $e) {
-                $this->redirectToRoute('sylius_shop_homepage');
-            }
-
-            assert($router instanceof RouterInterface);
-            $urlGenerator = new UrlGenerator($router);
-            $redirectUrl = $urlGenerator->generateAbsoluteURL($redirectUrl, ['tokenValue' => $orderToken]);
-        }
+        $redirectUrl = $this->getConfirmationUrl($method, ['tokenValue' => $orderToken]);
 
         return $this->redirect($redirectUrl);
     }
@@ -552,6 +541,20 @@ class KlarnaCheckoutController extends AbstractController
         $payment->setDetails($details);
     }
 
+    private function getKlarnaReference(PaymentInterface $payment): ?string
+    {
+        $details = $payment->getDetails();
+
+        if (!array_key_exists('klarna_order_id', $details)) {
+            return null;
+        }
+
+        /** @var string $klarnaOrderId */
+        $klarnaOrderId = $details['klarna_order_id'];
+
+        return $klarnaOrderId;
+    }
+
     public function replacePlaceholder(string $replacement, string $string): string
     {
         $strStart = strpos($string, '{');
@@ -634,6 +637,32 @@ class KlarnaCheckoutController extends AbstractController
         $data = json_decode($dataContents, true);
 
         return $data;
+    }
+
+    public function getConfirmationUrl(PaymentMethodInterface $method, array $parameters = []): string
+    {
+        /** @var array $merchantData */
+        $merchantData = $method->getGatewayConfig()?->getConfig()['merchantUrls'] ?? [];
+
+        /** @var string $redirectUrl */
+        $redirectUrl = $merchantData['confirmationUrl'] ?? $this->generateUrl('sylius_shop_homepage');
+
+        if (!str_starts_with($redirectUrl, 'http')) {
+            $router = null;
+
+            try {
+                /** @var RouterInterface $router */
+                $router = $this->container->get('router');
+            } catch (\Exception $e) {
+                $this->redirectToRoute('sylius_shop_homepage');
+            }
+
+            assert($router instanceof RouterInterface);
+            $urlGenerator = new UrlGenerator($router);
+            $redirectUrl = $urlGenerator->generateAbsoluteURL($redirectUrl, $parameters);
+        }
+
+        return $redirectUrl;
     }
 
     /**
