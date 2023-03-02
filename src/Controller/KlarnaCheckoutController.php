@@ -250,7 +250,11 @@ class KlarnaCheckoutController extends AbstractController
 
         assert($order instanceof OrderInterface);
         $klarnaData = $this->fetchOrderDataFromKlarna($order);
-        $this->updateFromKlarna($klarnaData, $order);
+
+        try {
+            $this->updateFromKlarna($klarnaData, $order);
+        } catch (ApiException $e) {
+        }
 
         $payment = $order->getLastPayment();
         assert($payment instanceof PaymentInterface);
@@ -285,11 +289,6 @@ class KlarnaCheckoutController extends AbstractController
             );
 
             $status = $response->getStatusCode();
-            $dataContent = $response->getBody()->getContents();
-
-            /** @var array $data */
-            $data = json_decode($dataContent, true);
-
         } catch (\Exception $e) {
             $status = 400;
         }
@@ -600,6 +599,7 @@ class KlarnaCheckoutController extends AbstractController
 
         /** @var ?string $klarnaOrderId */
         $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+        assert($klarnaOrderId !== null);
 
         /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
         $readOrderUrlTemplate = $this->parameterBag->get(
@@ -637,8 +637,6 @@ class KlarnaCheckoutController extends AbstractController
     }
 
     /**
-     * @param array $data
-     * @param OrderInterface $order
      * @throws ApiException
      */
     private function updateCustomer(array $addressData, OrderInterface $order): void
@@ -652,8 +650,6 @@ class KlarnaCheckoutController extends AbstractController
     }
 
     /**
-     * @param array $data
-     * @param AddressInterface $address
      * @throws ApiException
      */
     private function updateAddress(array $data, AddressInterface $address): void

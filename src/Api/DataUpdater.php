@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
@@ -9,17 +11,17 @@ use Sylius\Component\User\Canonicalizer\Canonicalizer;
 
 class DataUpdater
 {
-    const REQUIRED_API_ADDRESS_KEYS = [
+    public const REQUIRED_API_ADDRESS_KEYS = [
         'given_name',
         'family_name',
         'street_address',
         'postal_code',
         'city',
         'phone',
-        'country'
+        'country',
     ];
 
-    const REQUIRED_API_ADDRESS_CUSTOMER_KEYS = [
+    public const REQUIRED_API_ADDRESS_CUSTOMER_KEYS = [
         'given_name',
         'family_name',
         'email',
@@ -29,9 +31,6 @@ class DataUpdater
     /**
      * Updates customer based on address data from Klarna, not customer data.
      *
-     * @param array $addressData
-     * @param CustomerInterface $customer
-     * @return CustomerInterface
      * @throws ApiException
      */
     public function updateCustomer(array $addressData, CustomerInterface $customer): CustomerInterface
@@ -45,7 +44,7 @@ class DataUpdater
          * @var string $value
          */
         foreach ($addressData as $key => $value) {
-            match($key) {
+            match ($key) {
                 'given_name' => $customer->setFirstName($value),
                 'family_name' => $customer->setLastName($value),
                 'email' => $this->updateCustomerEmail($value, $customer),
@@ -68,9 +67,6 @@ class DataUpdater
     }
 
     /**
-     * @param array $addressData
-     * @param AddressInterface $address
-     * @return AddressInterface
      * @throws ApiException
      */
     public function updateAddress(array $addressData, AddressInterface $address): AddressInterface
@@ -79,8 +75,12 @@ class DataUpdater
             throw new ApiException('The data array misses required array keys: ');
         }
 
+        /**
+         * @var string $key
+         * @var string $value
+         */
         foreach ($addressData as $key => $value) {
-            match($key) {
+            match ($key) {
                 'given_name' => $address->setFirstName($value),
                 'family_name' => $address->setLastName($value),
                 'street_address' => $address->setStreet($value),
@@ -97,9 +97,6 @@ class DataUpdater
 
     /**
      * Asserts that a minimum of array keys are present.
-     * @param array $data
-     * @param array $expectedKeys
-     * @return bool
      */
     public function hasCorrectKeys(array $data, array $expectedKeys): bool
     {
@@ -109,5 +106,4 @@ class DataUpdater
 
         return count($intersection) === count($expectedKeys);
     }
-
 }
