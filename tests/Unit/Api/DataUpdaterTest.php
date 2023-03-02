@@ -3,10 +3,12 @@
 namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\Address;
 use Sylius\Component\Core\Model\AddressInterface;
-use Symfony\Component\VarDumper\Cloner\Data;
+use Sylius\Component\Core\Model\Customer;
+use Sylius\Component\Core\Model\CustomerInterface;
 
 class DataUpdaterTest extends TestCase
 {
@@ -19,7 +21,7 @@ class DataUpdaterTest extends TestCase
         $this->exampleAddressData = [
             'given_name'=> 'Jane',
             'family_name'=> 'Doe',
-            'email'=> 'jane.doe@example.com',
+            'email'=> 'janedoe@example.com',
             'title'=> 'Ms',
             'street_address'=> '47 Poynings Road',
             'postal_code'=> 'N19 5LH',
@@ -65,9 +67,30 @@ class DataUpdaterTest extends TestCase
         $expectedPostcode = 'N19 5LH';
         $actualPostcode = $address->getPostcode();
 
-        $this->assertEquals($expectedPostcode, $actualPostcode);
-
+        self::assertEquals($expectedPostcode, $actualPostcode);
     }
+
+    /**
+     * @throws ApiException
+     */
+    public function testUpdatedCustomerIsUpdated(): void
+    {
+        $klarnaAddress = $this->exampleAddressData;
+        $customer = $this->getCustomer();
+
+        $customer  = $this->dataUpdater->updateCustomer($klarnaAddress, $customer);
+
+        /** @var string $expectedEmailAddress */
+        $expectedEmailAddress = $this->exampleAddressData['email'];
+        $actualEmailAddress = $customer->getEmail();
+        self::assertEquals($expectedEmailAddress, $actualEmailAddress);
+
+        /** @var string $expectedPhoneNumber */
+        $expectedPhoneNumber = $this->exampleAddressData['phone'];
+        $actualPhoneNumber = $customer->getPhoneNumber();
+        self::assertEquals($expectedPhoneNumber, $actualPhoneNumber);
+    }
+
     public function testDifferentKlarnaAddressUpdatesSylius(): void
     {
         $filePath = __DIR__ . '/rawKlarnaOrderData.txt';
@@ -96,6 +119,18 @@ class DataUpdaterTest extends TestCase
         $address->setLastName('Doe');
 
         return $address;
+    }
+
+    private function getCustomer(): CustomerInterface
+    {
+        $customer = new Customer();
+        $customer->setFirstName('Jane');
+        $customer->setLastName('Doe');
+        $customer->setEmail('jane.doe@example.com');
+        $customer->setEmailCanonical('jane.doe@example.com');
+        $customer->setGender('u');
+
+        return $customer;
     }
 
 }

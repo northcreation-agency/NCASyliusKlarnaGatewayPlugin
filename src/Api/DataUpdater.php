@@ -5,6 +5,7 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\User\Canonicalizer\Canonicalizer;
 
 class DataUpdater
 {
@@ -18,18 +19,67 @@ class DataUpdater
         'country'
     ];
 
-    public function updateCustomer(array $data, CustomerInterface $customer): CustomerInterface
+    const REQUIRED_API_ADDRESS_CUSTOMER_KEYS = [
+        'given_name',
+        'family_name',
+        'email',
+        'phone',
+    ];
+
+    /**
+     * Updates customer based on address data from Klarna, not customer data.
+     *
+     * @param array $addressData
+     * @param CustomerInterface $customer
+     * @return CustomerInterface
+     * @throws ApiException
+     */
+    public function updateCustomer(array $addressData, CustomerInterface $customer): CustomerInterface
     {
+        if (!$this->hasCorrectKeys($addressData, self::REQUIRED_API_ADDRESS_CUSTOMER_KEYS)) {
+            throw new ApiException('The data array misses required array keys');
+        }
+
+        /**
+         * @var string $key
+         * @var string $value
+         */
+        foreach ($addressData as $key => $value) {
+            match($key) {
+                'given_name' => $customer->setFirstName($value),
+                'family_name' => $customer->setLastName($value),
+                'email' => $this->updateCustomerEmail($value, $customer),
+                'phone' => $customer->setPhoneNumber($value),
+                default => $customer
+            };
+        }
+
         return $customer;
     }
 
-    public function updateAddress(array $data, AddressInterface $address): AddressInterface
+    protected function updateCustomerEmail(string $email, CustomerInterface $customer): CustomerInterface
     {
-        if (!$this->hasCorrectKeys($data, self::REQUIRED_API_ADDRESS_KEYS)) {
+        $canonicalizer = new Canonicalizer();
+
+        $customer->setEmail($email);
+        $customer->setEmailCanonical($canonicalizer->canonicalize($email));
+
+        return $customer;
+    }
+
+    /**
+     * @param array $addressData
+     * @param AddressInterface $address
+     * @return AddressInterface
+     * @throws ApiException
+     */
+    public function updateAddress(array $addressData, AddressInterface $address): AddressInterface
+    {
+        if (!$this->hasCorrectKeys($addressData, self::REQUIRED_API_ADDRESS_KEYS)) {
             throw new ApiException('The data array misses required array keys: ');
         }
 
-        foreach ($data as $key => $value) {
+        foreach ($addressData as $key => $value) {
             match($key) {
                 'given_name' => $address->setFirstName($value),
                 'family_name' => $address->setLastName($value),
@@ -48,6 +98,7 @@ class DataUpdater
     /**
      * Asserts that a minimum of array keys are present.
      * @param array $data
+     * @param array $expectedKeys
      * @return bool
      */
     public function hasCorrectKeys(array $data, array $expectedKeys): bool
