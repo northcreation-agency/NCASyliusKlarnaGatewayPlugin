@@ -3,4 +3,5 @@ north_creation_agency_sylius_klarna_gateway:
         key: '%env(PAYUM_CYPHER_KEY)%'
     checkout:
         push_confirmation: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}/acknowledge
+        read_order: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}
         uri: https://api.playground.klarna.com/checkout/v3/orders

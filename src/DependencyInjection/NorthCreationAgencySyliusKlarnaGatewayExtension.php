@@ -38,12 +38,12 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
         }
 
         if (array_key_exists('checkout', $config)) {
-            if (is_array($config['checkout']) && array_key_exists('uri', $config['checkout'])) {
-                /** @var string|null $checkoutUri */
-                $checkoutUri = $config['checkout']['uri'] ?? '';
+            if (is_array($config['checkout']) && array_key_exists('read_order', $config['checkout'])) {
+                /** @var string|null $readOrder */
+                $readOrder = $config['checkout']['read_order'] ?? '';
                 $container->setParameter(
-                    'north_creation_agency_sylius_klarna_gateway.checkout.uri',
-                    $checkoutUri,
+                    'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
+                    $readOrder,
                 );
             }
 
@@ -53,6 +53,15 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
                 $container->setParameter(
                     'north_creation_agency_sylius_klarna_gateway.checkout.push_confirmation',
                     $pushConfirmation,
+                );
+            }
+
+            if (is_array($config['checkout']) && array_key_exists('uri', $config['checkout'])) {
+                /** @var string|null $checkoutUri */
+                $checkoutUri = $config['checkout']['uri'] ?? '';
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.checkout.uri',
+                    $checkoutUri,
                 );
             }
         }
