@@ -12,12 +12,16 @@ use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use SM\Factory\FactoryInterface;
+use Sylius\Component\Core\Model\AddressInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
@@ -245,6 +249,12 @@ class KlarnaCheckoutController extends AbstractController
         $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
 
         assert($order instanceof OrderInterface);
+        $klarnaData = $this->fetchOrderDataFromKlarna($order);
+
+        try {
+            $this->updateFromKlarna($klarnaData, $order);
+        } catch (ApiException $e) {
+        }
 
         $payment = $order->getLastPayment();
         assert($payment instanceof PaymentInterface);
@@ -552,5 +562,101 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         return substr_replace($string, $replacement, $strStart, $strEnd - $strStart + 1);
+    }
+
+    /**
+     * @throws ApiException
+     */
+    private function updateFromKlarna(array $data, OrderInterface $order): void
+    {
+        /** @var ?array $billingAddressData */
+        $billingAddressData = $data['billing_address'] ?? null;
+        if ($billingAddressData !== null) {
+            $this->updateCustomer($billingAddressData, $order);
+            $billingAddress = $order->getBillingAddress();
+            if ($billingAddress !== null) {
+                $this->updateAddress($billingAddressData, $billingAddress);
+            }
+        }
+
+        /** @var ?array $shippingAddressData */
+        $shippingAddressData = $data['shipping_address'] ?? null;
+        if ($shippingAddressData !== null) {
+            $shippingAddress = $order->getShippingAddress();
+            if ($shippingAddress !== null) {
+                $this->updateAddress($shippingAddressData, $shippingAddress);
+            }
+        }
+    }
+
+    private function fetchOrderDataFromKlarna(OrderInterface $order): array
+    {
+        $payment = $order->getPayments()->first();
+
+        assert($payment instanceof PaymentInterface);
+
+        $paymentDetails = $payment->getDetails();
+
+        /** @var ?string $klarnaOrderId */
+        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+        assert($klarnaOrderId !== null);
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
+        $readOrderUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
+        );
+        assert(is_string($readOrderUrlTemplate));
+
+        $readOrderUrl = $this->replacePlaceholder('' . $klarnaOrderId, $readOrderUrlTemplate);
+
+        /** @var PaymentInterface $payment */
+        $payment = $order->getPayments()->first();
+
+        /** @var ?PaymentMethodInterface $method */
+        $method = $payment->getMethod();
+        assert($method !== null);
+        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+
+        $response = $this->client->request(
+            'GET',
+            $readOrderUrl,
+            [
+                'headers' => [
+                    'Authorization' => $basicAuthString,
+                    'Content-Type' => 'application/json',
+                ],
+            ],
+        );
+
+        $dataContents = $response->getBody()->getContents();
+
+        /** @var array $data */
+        $data = json_decode($dataContents, true);
+
+        return $data;
+    }
+
+    /**
+     * @throws ApiException
+     */
+    private function updateCustomer(array $addressData, OrderInterface $order): void
+    {
+        $dataUpdater = new DataUpdater();
+        $customer = $order->getCustomer();
+        assert($customer instanceof CustomerInterface);
+        $customer = $dataUpdater->updateCustomer($addressData, $customer);
+
+        $this->entityManager->persist($customer);
+    }
+
+    /**
+     * @throws ApiException
+     */
+    private function updateAddress(array $data, AddressInterface $address): void
+    {
+        $dataUpdater = new DataUpdater();
+        $address = $dataUpdater->updateAddress($data, $address);
+
+        $this->entityManager->persist($address);
     }
 }
