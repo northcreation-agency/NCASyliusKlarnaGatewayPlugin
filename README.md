@@ -85,6 +85,47 @@ App\Model\Order\Order:
                                             type: string
                                             description: 'The Klarna checkout confirmation snippet'
                                             example: '<div id="klarna-checkout-container"></div>'
+        shop_klarna_confirmation:
+            method: 'GET'
+            path: 'shop/orders/{tokenValue}/klarna-confirmation'
+            controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::confirmHeadless
+            openapi_context:
+                summary: Confirms current payment status of a Klarna order
+                responses:
+                    200:
+                        description: 'OK'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        message:
+                                            type: string
+                                            description: 'Updated payment status'
+                                            example: 'Updated payment state. New state: paid'
+                    400:
+                        description: 'BAD REQUEST'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        request_status:
+                                            type: integer
+                                            description: 'Klarna server status'
+                                        error_message:
+                                            type: string
+                                            description: 'Error details'
+                    500:
+                        description: 'INTERNAL SERVER ERROR'
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        error_message:
+                                            type: string
+                                            description: 'Error details'
 ```
 
 In _plugin development_ environment, the api-config is imported by adding the following to 

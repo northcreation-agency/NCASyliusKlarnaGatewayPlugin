@@ -2,7 +2,7 @@ north_creation_agency_sylius_klarna_gateway_confirm:
     path: /klarna-checkout/confirm
     methods: [GET]
     defaults:
-        _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::confirm
+        _controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::confirmWithRedirect
 
 north_creation_agency_sylius_klarna_gateway_push:
     path: /klarna-checkout/push
