@@ -313,10 +313,10 @@ class KlarnaCheckoutController extends AbstractController
         if ($status === Response::HTTP_NO_CONTENT) {
             if ($payment->getState() !== PaymentInterfaceAlias::STATE_COMPLETED) {
                 $this->updateState($order);
-                $message = 'Updated payment state. New state: ' . $order->getPaymentState();
+                $message = 'Updated payment state. New state: ' . ($order->getPaymentState() ?? 'missing');
             }
         } else {
-            $message = 'Payment state was not updated. Current state: ' . $order->getPaymentState();
+            $message = 'Payment state was not updated. Current state: ' . ($order->getPaymentState() ?? 'missing');
         }
 
         $this->entityManager->flush();
@@ -326,28 +326,32 @@ class KlarnaCheckoutController extends AbstractController
 
     public function confirmHeadless(Request $request): Response
     {
+        /** @var ?string $orderToken */
         $orderToken = $request->attributes->get('tokenValue') ?? '';
         $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
         assert($order instanceof OrderInterface);
 
         $statusDO = $this->confirm($order);
         $status = $statusDO->getStatus();
-        return match($status){
-            Response::HTTP_NO_CONTENT => new JsonResponse([
+
+        return match ($status) {
+            Response::HTTP_NO_CONTENT => new JsonResponse(
+                [
                 'message' => $statusDO->getMessage()],
-                Response::HTTP_OK
+                Response::HTTP_OK,
             ),
-            Response::HTTP_INTERNAL_SERVER_ERROR => new JsonResponse([
+            Response::HTTP_INTERNAL_SERVER_ERROR => new JsonResponse(
+                [
                 'error_message' => $statusDO->getErrorMessage()],
-                $status
+                $status,
             ),
-            default => new JsonResponse([
+            default => new JsonResponse(
+                [
                 'request_status' => $status,
                 'error_message' => $statusDO->getErrorMessage()],
-                Response::HTTP_BAD_REQUEST
+                Response::HTTP_BAD_REQUEST,
             )
         };
-
     }
 
     public function confirmWithRedirect(Request $request): Response
@@ -500,10 +504,10 @@ class KlarnaCheckoutController extends AbstractController
         /** @var string|null $checkoutUrl */
         $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
-        /** @var boolean $headlessMode */
+        /** @var bool $headlessMode */
         $headlessMode = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.read_order') ?? false;
 
-        /** @var string|null $confirmationHeadlessUrl */
+        /** @var string|null $confirmationHeadfullUrl */
         $confirmationHeadfullUrl = $this->generateUrl(
             'north_creation_agency_sylius_klarna_gateway_confirm',
             ['order_token' => $payment->getOrder()?->getTokenValue() ?? ''],
