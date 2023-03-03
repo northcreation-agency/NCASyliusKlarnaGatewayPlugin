@@ -12,6 +12,7 @@ use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
@@ -180,6 +181,11 @@ class KlarnaCheckoutController extends AbstractController
 
     public function getConfirmationSnippet(string $tokenValue): Response
     {
+        /** @var ?OrderInterface $order */
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
+        assert($order instanceof OrderInterface);
+        $this->confirm($order);
+
         $payment = $this->getPaymentFromOrderToken($tokenValue);
 
         assert($payment instanceof PaymentInterface);
@@ -251,12 +257,11 @@ class KlarnaCheckoutController extends AbstractController
         );
     }
 
-    public function confirm(Request $request): Response
+    public function confirm(OrderInterface $order): StatusDO
     {
-        $orderToken = $request->query->get('order_token') ?? '';
-        $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
+        $errorMessage = null;
+        $message = null;
 
-        assert($order instanceof OrderInterface);
         $klarnaData = $this->fetchOrderDataFromKlarna($order);
 
         try {
@@ -297,18 +302,66 @@ class KlarnaCheckoutController extends AbstractController
             );
 
             $status = $response->getStatusCode();
+        } catch (GuzzleException $e) {
+            $status = $e->getCode();
+            $errorMessage = 'Could not retrieve data from Klarna.';
         } catch (\Exception $e) {
-            $status = 400;
+            $status = 500;
+            $errorMessage = 'Server error.';
         }
 
-        if ($status === 204) {
-            $paymentState = $payment->getState();
-            if ($paymentState !== PaymentInterfaceAlias::STATE_COMPLETED) {
+        if ($status === Response::HTTP_NO_CONTENT) {
+            if ($payment->getState() !== PaymentInterfaceAlias::STATE_COMPLETED) {
                 $this->updateState($order);
+                $message = 'Updated payment state. New state: ' . ($order->getPaymentState() ?? 'missing');
             }
+        } else {
+            $message = 'Payment state was not updated. Current state: ' . ($order->getPaymentState() ?? 'missing');
         }
 
         $this->entityManager->flush();
+
+        return new StatusDO($status, $message, $errorMessage);
+    }
+
+    public function confirmHeadless(Request $request): Response
+    {
+        /** @var ?string $orderToken */
+        $orderToken = $request->attributes->get('tokenValue') ?? '';
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
+        assert($order instanceof OrderInterface);
+
+        $statusDO = $this->confirm($order);
+        $status = $statusDO->getStatus();
+
+        return match ($status) {
+            Response::HTTP_NO_CONTENT => new JsonResponse(
+                [
+                'message' => $statusDO->getMessage()],
+                Response::HTTP_OK,
+            ),
+            Response::HTTP_INTERNAL_SERVER_ERROR => new JsonResponse(
+                [
+                'error_message' => $statusDO->getErrorMessage()],
+                $status,
+            ),
+            default => new JsonResponse(
+                [
+                'request_status' => $status,
+                'error_message' => $statusDO->getErrorMessage()],
+                Response::HTTP_BAD_REQUEST,
+            )
+        };
+    }
+
+    public function confirmWithRedirect(Request $request): Response
+    {
+        $orderToken = $request->query->get('order_token') ?? '';
+        $order = $this->orderRepository->findOneBy(['tokenValue' => $orderToken]);
+        assert($order instanceof OrderInterface);
+
+        $method = $order->getLastPayment()?->getMethod();
+        assert($method instanceof PaymentMethodInterface);
 
         $redirectUrl = $this->getConfirmationUrl($method, ['tokenValue' => $orderToken]);
 
@@ -451,12 +504,18 @@ class KlarnaCheckoutController extends AbstractController
         /** @var string|null $checkoutUrl */
         $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
-        /** @var string|null $confirmationUrl */
-        $confirmationUrl = $this->generateUrl(
+        /** @var bool $headlessMode */
+        $headlessMode = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.read_order') ?? false;
+
+        /** @var string|null $confirmationHeadfullUrl */
+        $confirmationHeadfullUrl = $this->generateUrl(
             'north_creation_agency_sylius_klarna_gateway_confirm',
             ['order_token' => $payment->getOrder()?->getTokenValue() ?? ''],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
+
+        /** @var string|null $confirmationUrl */
+        $confirmationUrl = $headlessMode ? $merchantData['confirmationUrl'] : $confirmationHeadfullUrl;
 
         if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;
@@ -468,6 +527,7 @@ class KlarnaCheckoutController extends AbstractController
             $urlGenerator = new UrlGenerator($router);
             $termsUrl = $urlGenerator->generateAbsoluteURL($termsUrl);
             $checkoutUrl = $urlGenerator->generateAbsoluteURL($checkoutUrl);
+            $confirmationUrl = $urlGenerator->generateAbsoluteURL($confirmationUrl, ['tokenValue' => $order->getTokenValue() ?? '']);
         } catch (\Exception $e) {
         }
 
