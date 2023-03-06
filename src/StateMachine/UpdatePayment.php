@@ -74,6 +74,7 @@ class UpdatePayment
         $gatewayConfig = $method->getGatewayConfig();
         assert($gatewayConfig instanceof  GatewayConfigInterface);
 
+        /** @psalm-suppress DeprecatedMethod */
         $factoryName = $gatewayConfig->getFactoryName();
 
         return str_contains($factoryName, 'klarna_checkout');
