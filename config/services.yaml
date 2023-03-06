@@ -46,6 +46,16 @@ services:
         ]
         tags:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }
+    
+    north_creation_agency_sylius_klarna_gateway.api.order_verifier:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifier
+        public: true
+        arguments: [
+            '@doctrine.orm.entity_manager',
+            '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever',
+            '@parameter_bag',
+            '@sylius.http_client',
+        ]
 
     north_creation_agency_sylius_klarna_gateway.cypher:
         class: Payum\Core\Bridge\Defuse\Security\DefuseCypher
@@ -57,6 +67,15 @@ services:
         public: true
         arguments: [
             '@north_creation_agency_sylius_klarna_gateway.cypher'
+        ]
+    
+    north_creation_agency_sylius_klarna_gateway.state_machine.update_payment:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\UpdatePayment
+        public: true
+        arguments: [
+            '@SM\Factory\Factory',
+            '@north_creation_agency_sylius_klarna_gateway.api.order_verifier',
+            '@parameter_bag'
         ]
 
     GuzzleHttp\ClientInterface: '@sylius.http_client'    

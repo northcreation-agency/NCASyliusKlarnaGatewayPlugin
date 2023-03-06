@@ -39,11 +39,20 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
 
         if (array_key_exists('checkout', $config)) {
             if (is_array($config['checkout']) && array_key_exists('headless', $config['checkout'])) {
-                /** @var string|null $headless */
+                /** @var bool|null $headless */
                 $headless = $config['checkout']['headless'] ?? '';
                 $container->setParameter(
                     'north_creation_agency_sylius_klarna_gateway.checkout.headless',
                     $headless,
+                );
+            }
+
+            if (is_array($config['checkout']) && array_key_exists('silent_exception', $config['checkout'])) {
+                /** @var bool|null $silentException */
+                $silentException = $config['checkout']['silent_exception'] ?? '';
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.checkout.silent_exception',
+                    $silentException,
                 );
             }
 

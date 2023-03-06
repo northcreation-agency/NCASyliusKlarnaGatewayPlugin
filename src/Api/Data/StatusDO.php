@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class StatusDO
 {
+    public const PAYMENT_CONFIRMED = Response::HTTP_NO_CONTENT;
+
     public function __construct(
         private int $status,
-        private ?string $message,
-        private ?string $errorMessage,
+        private ?string $message = null,
+        private ?string $errorMessage = null,
     ) {
     }
 
