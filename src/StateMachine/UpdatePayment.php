@@ -7,9 +7,12 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifier;
+use Payum\Core\Model\GatewayConfigInterface;
 use SM\Factory\FactoryInterface;
 use SM\SMException;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\PaymentInterface;
+use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Payment\PaymentTransitions;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -29,6 +32,9 @@ class UpdatePayment
      */
     public function afterCreateOrder(OrderInterface $order): void
     {
+        if (!$this->supportsOrder($order)) {
+            return;
+        }
         $status = $this->orderVerifier->verify($order);
 
         if ($status->getStatus() === StatusDO::PAYMENT_CONFIRMED) {
@@ -55,5 +61,21 @@ class UpdatePayment
                 throw new ApiException('Could not verify payment with Klarna');
             }
         }
+    }
+
+    private function supportsOrder(OrderInterface $order): bool
+    {
+        $payment = $order->getLastPayment();
+        assert($payment instanceof PaymentInterface);
+
+        $method = $payment->getMethod();
+        assert($method instanceof PaymentMethodInterface);
+
+        $gatewayConfig = $method->getGatewayConfig();
+        assert($gatewayConfig instanceof  GatewayConfigInterface);
+
+        $factoryName = $gatewayConfig->getFactoryName();
+
+        return str_contains($factoryName, 'klarna_checkout');
     }
 }
