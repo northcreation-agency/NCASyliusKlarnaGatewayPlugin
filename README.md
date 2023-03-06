@@ -32,8 +32,15 @@ north_creation_agency_sylius_klarna_gateway:
     cypher:
         key: '%env(PAYUM_CYPHER_KEY)%'
     checkout:
+        headless: true
+        silent_exception: false
+        push_confirmation: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}/acknowledge
+        read_order: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}
         uri: https://api.playground.klarna.com/checkout/v3/orders
 ```
+
+`headless` is if redirects through Sylius application will be handled there, or you will make a separate complete request.
+`silent_exception` is if an exception should  not be thrown if payment could not be verified on Klarna. When set to `true` a cart will still be created if payment has not been handled by Klarna.
 
 ### Routes
 Default Sylius Klarna routes are imported in your app's routes.yaml file:

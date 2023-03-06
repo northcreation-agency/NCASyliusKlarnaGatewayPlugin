@@ -3,6 +3,16 @@ north_creation_agency_sylius_klarna_gateway:
         key: '%env(PAYUM_CYPHER_KEY)%'
     checkout:
         headless: true
+        silent_exception: false
         push_confirmation: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}/acknowledge
         read_order: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}
         uri: https://api.playground.klarna.com/checkout/v3/orders
+
+winzou_state_machine:
+    sylius_order:
+        callbacks:
+            after:
+                north_creation_agency_sylius_klarna_gateway.update_payment:
+                    on: ["create"]
+                    do: ["@north_creation_agency_sylius_klarna_gateway.state_machine.update_payment", "afterCreateOrder"]
+                    args: ["object"]

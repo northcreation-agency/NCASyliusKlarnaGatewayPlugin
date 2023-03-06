@@ -28,6 +28,7 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('checkout')
                     ->children()
                         ->booleanNode('headless')->end()
+                        ->booleanNode('silent_exception')->end()
                         ->scalarNode('read_order')->end()
                         ->scalarNode('push_confirmation')->end()
                         ->scalarNode('uri')->end()

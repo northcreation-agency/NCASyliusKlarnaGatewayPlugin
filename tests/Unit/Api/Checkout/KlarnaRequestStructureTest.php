@@ -159,6 +159,9 @@ class KlarnaRequestStructureTest extends TestCase
         $order->method('getShipments')
             ->willReturn($this->createShipments());
 
+        $order->method('getId')
+            ->willReturn('1');
+
         $order->method('getNumber')
             ->willReturn('000001');
 
