@@ -47,6 +47,10 @@ services:
         tags:
             - { name: payum.action, factory: klarna_checkout, alias: payum.action.capture }
                 
+    north_creation_agency_sylius_klarna_gateway.actions.activate:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\ActivatePayment
+        public: true
+        
     north_creation_agency_sylius_klarna_gateway.actions.refund:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\RefundAction
         public: true

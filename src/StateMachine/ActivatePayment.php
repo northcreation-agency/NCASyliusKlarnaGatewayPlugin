@@ -2,21 +2,16 @@
 
 declare(strict_types=1);
 
-namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
+namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
-use Payum\Core\Action\ActionInterface;
-use Payum\Core\ApiAwareInterface;
-use Payum\Core\Exception\RequestNotSupportedException;
-use Payum\Core\Exception\UnsupportedApiException;
 use Payum\Core\Model\GatewayConfigInterface;
-use Payum\Core\Request\Capture;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
@@ -25,10 +20,8 @@ use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
 
-class RefundAction implements ActionInterface, ApiAwareInterface
+class ActivatePayment
 {
-    private ?KlarnaApi $api;
-
     public function __construct(
         private ClientInterface $client,
         private TaxRateResolverInterface $taxRateResolver,
@@ -37,14 +30,26 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
     ) {
-        $this->api = null;
     }
 
     /**
      * @throws ApiException
      * @throws GuzzleException
      */
-    public function refund(SyliusPaymentInterface $payment): void
+    public function activate(OrderInterface $order): void
+    {
+        $payment = $order->getLastPayment();
+
+        assert($payment instanceof PaymentInterface);
+
+        $this->sendCaptureRequest($payment);
+    }
+
+    /**
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function sendCaptureRequest(SyliusPaymentInterface $payment): void
     {
         $paymentMethod = $payment->getMethod();
         assert($paymentMethod instanceof PaymentMethodInterface);
@@ -52,39 +57,11 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             return;
         }
 
-        $this->sendRefundRequest($payment);
-    }
-
-    /**
-     * @throws ApiException
-     * @throws GuzzleException
-     */
-    public function execute($request): void
-    {
-        RequestNotSupportedException::assertSupports($this, $request);
-
-        assert($request instanceof Capture);
-
-        /** @var SyliusPaymentInterface $payment */
-        $payment = $request->getModel();
-
-        $this->sendRefundRequest($payment);
-    }
-
-    /**
-     * @throws ApiException
-     * @throws GuzzleException
-     */
-    public function sendRefundRequest(SyliusPaymentInterface $payment): void
-    {
         $paymentDetails = $payment->getDetails();
 
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
 
-        $paymentMethod = $payment->getMethod();
-
-        assert($paymentMethod instanceof PaymentMethodInterface);
         $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
 
         /** @var ?string $klarnaOrderId */
@@ -98,7 +75,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
         );
 
-        $refundUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate) . '/refunds';
+        $captureUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate) . '/captures';
 
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
@@ -106,14 +83,14 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
-            type: KlarnaRequestStructure::REFUND,
+            type: KlarnaRequestStructure::CAPTURE,
         );
 
         $payload = $klarnaRequestStructure->toArray();
 
         $response = $this->client->request(
             'POST',
-            $refundUrl,
+            $captureUrl,
             [
                 'headers' => [
                     'Authorization' => $basicAuthString,
@@ -125,27 +102,8 @@ class RefundAction implements ActionInterface, ApiAwareInterface
 
         $status = $response->getStatusCode();
         if ($status !== Response::HTTP_CREATED) {
-            throw new ApiException('Refund was not created with Klarna');
+            throw new ApiException('Activation of Klarna payment was not successful');
         }
-    }
-
-    public function supports($request): bool
-    {
-        return $request instanceof Capture && $request->getModel() instanceof SyliusPaymentInterface;
-    }
-
-    public function setApi($api): void
-    {
-        if (!$api instanceof KlarnaApi) {
-            throw new UnsupportedApiException('Expected an instance of ' . KlarnaApi::class);
-        }
-
-        $this->api = $api;
-    }
-
-    public function getApi(): ?KlarnaApi
-    {
-        return $this->api;
     }
 
     public function replacePlaceholder(string $replacement, string $string): string
@@ -163,7 +121,6 @@ class RefundAction implements ActionInterface, ApiAwareInterface
     public function supportsPaymentMethod(PaymentMethodInterface $paymentMethod): bool
     {
         $paymentConfig = $paymentMethod->getGatewayConfig();
-
         assert($paymentConfig instanceof GatewayConfigInterface);
 
         /** @psalm-suppress DeprecatedMethod */

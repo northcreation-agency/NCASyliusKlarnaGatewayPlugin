@@ -16,6 +16,8 @@ class KlarnaRequestStructure
 
     public const REFUND = 'refund';
 
+    public const CAPTURE = 'capture';
+
     public function __construct(
         private OrderInterface $order,
         private TaxRateResolverInterface $taxRateResolver,
@@ -36,7 +38,11 @@ class KlarnaRequestStructure
             return $this->refundArray();
         }
 
-        return $this->checkoutArray();
+        return match ($this->type) {
+            self::REFUND => $this->refundArray(),
+            self::CAPTURE => $this->captureArray(),
+            default => $this->checkoutArray()
+        };
     }
 
     protected function checkoutArray(): array
@@ -97,6 +103,38 @@ class KlarnaRequestStructure
         }
 
         return $requestStructure;
+    }
+
+    private function captureArray(): array
+    {
+        $orderLines = $this->getOrderLinesForOrder($this->order);
+        $orderLinesArray = [];
+        foreach ($orderLines as $orderLine) {
+            $orderLinesArray[] = $orderLine->toArray();
+        }
+
+        $shipmentLines = $this->getShipmentLinesForOrder($this->order);
+        foreach ($shipmentLines as $shipmentLine) {
+            $orderLinesArray[] = $shipmentLine->toArray();
+        }
+
+        $shipmentsArray = [];
+        $shipments = $this->order->getShipments();
+        foreach ($shipments as $shipment) {
+            $shippingMethod = $shipment->getMethod();
+            assert($shippingMethod !== null);
+
+            $shipmentsArray[] = [
+                'shipping_company' => $shippingMethod->getName(),
+                'tracking_number' => $shipment->getTracking() ?? '',
+            ];
+        }
+
+        return [
+            'captured_amount' => $this->sumOfLineItems($orderLinesArray),
+            'description' => 'Shipped from webshop',
+            'shipping_info' => $shipmentsArray,
+        ];
     }
 
     protected function refundArray(): array
