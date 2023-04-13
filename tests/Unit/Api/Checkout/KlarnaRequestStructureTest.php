@@ -30,6 +30,7 @@ use Sylius\Component\Product\Model\ProductVariantTranslation;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Model\TaxCategory;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class KlarnaRequestStructureTest extends TestCase
 {
@@ -55,11 +56,12 @@ class KlarnaRequestStructureTest extends TestCase
             ->willReturn(909.0);
 
         $this->klarnaRequestStructure = new KlarnaRequestStructure(
-            $this->order,
-            $this->merchantData,
-            $taxRateResolver,
-            $this->createMock(OrderProcessorInterface::class),
-            $taxCalculator
+            order: $this->order,
+            taxRateResolver: $taxRateResolver,
+            shippingChargesProcessor: $this->createMock(OrderProcessorInterface::class),
+            taxCalculator: $taxCalculator,
+            parameterBag: $this->createMock(ParameterBagInterface::class),
+            merchantData: $this->merchantData
         );
     }
 

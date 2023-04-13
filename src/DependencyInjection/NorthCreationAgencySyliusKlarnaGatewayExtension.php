@@ -28,11 +28,11 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
 
         if (array_key_exists('cypher', $config)) {
             if (is_array($config['cypher']) && array_key_exists('key', $config['cypher'])) {
-                /** @var string $cypherKey */
-                $cypherKey = $config['cypher']['key'] ?? '';
+                /** @var string $includeShipping */
+                $includeShipping = $config['cypher']['key'] ?? '';
                 $container->setParameter(
                     'north_creation_agency_sylius_klarna_gateway.cypher.key',
-                    $cypherKey,
+                    $includeShipping,
                 );
             }
         }
@@ -80,6 +80,17 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
                 $container->setParameter(
                     'north_creation_agency_sylius_klarna_gateway.checkout.uri',
                     $checkoutUri,
+                );
+            }
+        }
+
+        if (array_key_exists('refund', $config)) {
+            if (is_array($config['refund']) && array_key_exists('include_shipping', $config['refund'])) {
+                /** @var bool $includeShipping */
+                $includeShipping = $config['refund']['include_shipping'] ?? false;
+                $container->setParameter(
+                    'north_creation_agency_sylius_klarna_gateway.refund.include_shipping',
+                    $includeShipping,
                 );
             }
         }

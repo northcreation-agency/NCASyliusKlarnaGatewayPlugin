@@ -7,6 +7,8 @@ imports:
 
     - { resource: "@SyliusApiBundle/Resources/config/app/config.yaml" }
 
+    - { resource: "@NorthCreationAgencySyliusKlarnaGatewayPlugin/config/packages/state_machine.yaml" }
+
 parameters:
     sylius_core.public_dir: '%kernel.project_dir%/public'
 
@@ -16,3 +18,4 @@ sylius_shop:
 
 sylius_api:
     enabled: true
+

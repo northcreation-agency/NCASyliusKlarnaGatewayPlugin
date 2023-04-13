@@ -1,0 +1,9 @@
+winzou_state_machine:
+    sylius_payment:
+        callbacks:
+            # callbacks may be called before or after specified transitions, in the checkout state machine we've got callbacks only after transitions
+            after:
+                klarna_refund:
+                    on: ["refund"]
+                    do: ["@north_creation_agency_sylius_klarna_gateway.actions.refund", "refund"]
+                    args: ["object"]

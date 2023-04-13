@@ -4,20 +4,26 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
-use Sylius\Component\Core\Model\Order;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class KlarnaRequestStructure
 {
+    public const CHECKOUT = 'checkout';
+
+    public const REFUND = 'refund';
+
     public function __construct(
         private OrderInterface $order,
-        private MerchantData $merchantData,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
         private CalculatorInterface $taxCalculator,
+        private ParameterBagInterface $parameterBag,
+        private ?MerchantData $merchantData = null,
+        private string $type = self::CHECKOUT,
     ) {
     }
 
@@ -25,6 +31,15 @@ class KlarnaRequestStructure
      * @throws \Exception
      */
     public function toArray(): array
+    {
+        if ($this->type === self::REFUND) {
+            return $this->refundArray();
+        }
+
+        return $this->checkoutArray();
+    }
+
+    protected function checkoutArray(): array
     {
         $orderLines = $this->getOrderLinesForOrder($this->order);
         $orderLinesArray = [];
@@ -70,7 +85,7 @@ class KlarnaRequestStructure
             'order_amount' => $this->order->getTotal(),
             'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
-            'merchant_urls' => $this->merchantData->toArray(),
+            'merchant_urls' => $this->merchantData?->toArray() ?? [],
             'billing_address' => $billingAddressData->toArray(),
             'merchant_reference1' => $referenceNumber,
         ];
@@ -82,6 +97,41 @@ class KlarnaRequestStructure
         }
 
         return $requestStructure;
+    }
+
+    protected function refundArray(): array
+    {
+        $orderLines = $this->getOrderLinesForOrder($this->order);
+        $orderLinesArray = [];
+        foreach ($orderLines as $orderLine) {
+            $orderLinesArray[] = $orderLine->toArray();
+        }
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         * @var bool $includeShipping
+         */
+        $includeShipping = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.refund.include_shipping',
+        );
+
+        if ($includeShipping === true) {
+            $shipmentLines = $this->getShipmentLinesForOrder($this->order);
+            foreach ($shipmentLines as $shipmentLine) {
+                $orderLinesArray[] = $shipmentLine->toArray();
+            }
+        }
+
+        return [
+            'description' => 'Initialized refund from web shop',
+            'refunded_amount' => $this->sumOfLineItems($orderLinesArray),
+            'reference' => $this->order->getNumber(),
+            'order_lines' => $orderLinesArray,
+        ];
+    }
+
+    protected function sumOfLineItems(array $orderLines): int
+    {
+        return array_reduce($orderLines, fn (int $sum, array $line) => $sum + (int) $line['total_amount'], 0);
     }
 
     /**
@@ -138,5 +188,10 @@ class KlarnaRequestStructure
         }
 
         return $shipmentLines;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
     }
 }
