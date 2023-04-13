@@ -86,7 +86,6 @@ final class NorthCreationAgencySyliusKlarnaGatewayExtension extends Extension
 
         if (array_key_exists('refund', $config)) {
             if (is_array($config['refund']) && array_key_exists('include_shipping', $config['refund'])) {
-
                 /** @var bool $includeShipping */
                 $includeShipping = $config['refund']['include_shipping'] ?? false;
                 $container->setParameter(

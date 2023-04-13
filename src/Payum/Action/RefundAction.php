@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
-use _PHPStan_eb00fd21c\Nette\Neon\Exception;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
@@ -63,7 +62,6 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         $payment = $request->getModel();
 
         $this->sendRefundRequest($payment);
-
     }
 
     /**
@@ -76,7 +74,6 @@ class RefundAction implements ActionInterface, ApiAwareInterface
 
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
-        $status = 200;
 
         $paymentMethod = $payment->getMethod();
 
@@ -91,7 +88,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
          * @var string $orderManagementUrlTemplate
          */
         $orderManagementUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.read_order'
+            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
         );
 
         $refundUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate) . '/refunds';
@@ -102,7 +99,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
-            type: KlarnaRequestStructure::REFUND
+            type: KlarnaRequestStructure::REFUND,
         );
 
         $payload = $klarnaRequestStructure->toArray();
@@ -115,8 +112,8 @@ class RefundAction implements ActionInterface, ApiAwareInterface
                     'Authorization' => $basicAuthString,
                     'Content-Type' => 'application/json',
                 ],
-                'body' => json_encode($payload)
-            ]
+                'body' => json_encode($payload),
+            ],
         );
 
         $status = $response->getStatusCode();

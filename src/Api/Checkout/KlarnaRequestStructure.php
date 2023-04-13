@@ -13,6 +13,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 class KlarnaRequestStructure
 {
     public const CHECKOUT = 'checkout';
+
     public const REFUND = 'refund';
 
     public function __construct(
@@ -22,7 +23,7 @@ class KlarnaRequestStructure
         private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private ?MerchantData $merchantData = null,
-        private string $type = self::CHECKOUT
+        private string $type = self::CHECKOUT,
     ) {
     }
 
@@ -31,7 +32,6 @@ class KlarnaRequestStructure
      */
     public function toArray(): array
     {
-
         if ($this->type === self::REFUND) {
             return $this->refundArray();
         }
@@ -85,7 +85,7 @@ class KlarnaRequestStructure
             'order_amount' => $this->order->getTotal(),
             'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
-            'merchant_urls' => $this->merchantData->toArray(),
+            'merchant_urls' => $this->merchantData?->toArray() ?? [],
             'billing_address' => $billingAddressData->toArray(),
             'merchant_reference1' => $referenceNumber,
         ];
@@ -111,7 +111,7 @@ class KlarnaRequestStructure
          * @var bool $includeShipping
          */
         $includeShipping = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.refund.include_shipping'
+            'north_creation_agency_sylius_klarna_gateway.refund.include_shipping',
         );
 
         if ($includeShipping === true) {
@@ -131,7 +131,7 @@ class KlarnaRequestStructure
 
     protected function sumOfLineItems(array $orderLines): int
     {
-        return array_reduce($orderLines, fn ($sum, $line) => $sum + $line['total_amount'], 0);
+        return array_reduce($orderLines, fn (int $sum, array $line) => $sum + (int) $line['total_amount'], 0);
     }
 
     /**
@@ -190,9 +190,6 @@ class KlarnaRequestStructure
         return $shipmentLines;
     }
 
-    /**
-     * @return string
-     */
     public function getType(): string
     {
         return $this->type;

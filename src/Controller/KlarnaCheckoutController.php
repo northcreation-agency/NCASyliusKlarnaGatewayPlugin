@@ -111,7 +111,7 @@ class KlarnaCheckoutController extends AbstractController
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
-            merchantData: $merchantData
+            merchantData: $merchantData,
         );
 
         $requestData = $klarnaRequestStructure->toArray();
