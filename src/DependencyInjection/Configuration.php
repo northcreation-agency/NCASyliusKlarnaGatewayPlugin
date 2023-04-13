@@ -34,6 +34,11 @@ final class Configuration implements ConfigurationInterface
                         ->scalarNode('uri')->end()
                     ->end()
                 ->end()
+                ->arrayNode('refund')
+                    ->children()
+                        ->scalarNode('include_shipping')->end()
+                    ->end()
+                ->end()
             ->end()
         ;
 

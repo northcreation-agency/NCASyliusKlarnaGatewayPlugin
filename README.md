@@ -37,10 +37,21 @@ north_creation_agency_sylius_klarna_gateway:
         push_confirmation: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}/acknowledge
         read_order: https://api.playground.klarna.com/ordermanagement/v1/orders/{order_id}
         uri: https://api.playground.klarna.com/checkout/v3/orders
+    refund:
+        include_shipping: false
 ```
 
 `headless` is if redirects through Sylius application will be handled there, or you will make a separate complete request.
 `silent_exception` is if an exception should  not be thrown if payment could not be verified on Klarna. When set to `true` a cart will still be created if payment has not been handled by Klarna.
+`refund.include_shipping` defaults to false. This will refund the whole amount of a purchase except the shipping cost when set to false. When set to true, the shipping cost is included in the refund.
+
+### State Machine  
+Import state machine configuration for refund hook.
+In config/packages/_sylius.yaml, import the configuration:
+```yaml
+imports:
+    - { resource: "@NorthCreationAgencySyliusKlarnaGatewayPlugin/config/packages/state_machine.yaml" }
+```
 
 ### Routes
 Default Sylius Klarna routes are imported in your app's routes.yaml file:
