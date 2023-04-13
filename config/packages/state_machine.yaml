@@ -7,3 +7,10 @@ winzou_state_machine:
                     on: ["refund"]
                     do: ["@north_creation_agency_sylius_klarna_gateway.actions.refund", "refund"]
                     args: ["object"]
+    sylius_shipment:
+        callbacks:
+            after:
+                klarna_activate:
+                    on: ["ship"]
+                    do: ["@north_creation_agency_sylius_klarna_gateway.actions.activate", "activate"]
+                    args: ["object.getOrder()"]
