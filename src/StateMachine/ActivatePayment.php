@@ -20,7 +20,7 @@ use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
 
-class ActivatePayment
+class ActivatePayment implements ActivatePaymentInterface
 {
     public function __construct(
         private ClientInterface $client,

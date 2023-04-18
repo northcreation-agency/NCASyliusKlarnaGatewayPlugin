@@ -6,7 +6,7 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router;
 
 use Symfony\Component\Routing\RouterInterface;
 
-class UrlGenerator
+class UrlGenerator implements UrlGeneratorInterface
 {
     public function __construct(
         private RouterInterface $router,

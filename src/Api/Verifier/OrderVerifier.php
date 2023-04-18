@@ -12,13 +12,15 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use Sylius\Component\Core\Model\AddressInterface;
+use Sylius\Component\Core\Model\Customer;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
+use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-class OrderVerifier
+class OrderVerifier implements OrderVerifierInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -148,6 +150,25 @@ class OrderVerifier
      */
     private function updateFromKlarna(array $data, OrderInterface $order): void
     {
+        /** @var ?string $email */
+        $email = $data['billing_address']['email'] ?? $data['shipping_address']['email'] ?? null;
+
+        $customer = $order->getCustomer();
+        assert($customer instanceof CustomerInterface);
+
+        if ($email !== null && $email !== $customer->getEmail()) {
+
+            /** @var CustomerRepositoryInterface $customerRepository */
+            $customerRepository = $this->entityManager->getRepository(Customer::class);
+
+            /** @var ?CustomerInterface $customerAlternative */
+            $customerAlternative = $customerRepository->findOneBy(['email' => $email]);
+
+            if ($customerAlternative !== null) {
+                $order->setCustomer($customerAlternative);
+            }
+        }
+
         /** @var ?array $billingAddressData */
         $billingAddressData = $data['billing_address'] ?? null;
         if ($billingAddressData !== null) {
