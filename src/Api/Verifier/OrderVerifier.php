@@ -157,7 +157,6 @@ class OrderVerifier implements OrderVerifierInterface
         assert($customer instanceof CustomerInterface);
 
         if ($email !== null && $email !== $customer->getEmail()) {
-
             /** @var CustomerRepositoryInterface $customerRepository */
             $customerRepository = $this->entityManager->getRepository(Customer::class);
 
