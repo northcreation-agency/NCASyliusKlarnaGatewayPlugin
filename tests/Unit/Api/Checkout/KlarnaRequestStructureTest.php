@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\Address;
 use Sylius\Component\Core\Model\Adjustment;
 use Sylius\Component\Core\Model\AdjustmentInterface;
@@ -55,12 +56,21 @@ class KlarnaRequestStructureTest extends TestCase
             ->method('calculate')
             ->willReturn(909.0);
 
+        $numberAssignerMock = (new class implements OrderNumberAssignerInterface
+        {
+            public function assignNumber(\Sylius\Component\Order\Model\OrderInterface $order): void
+            {
+                $order->setNumber(str_pad((string)$order->getId(), 9, '0' ));
+            }
+        }) ;
+
         $this->klarnaRequestStructure = new KlarnaRequestStructure(
             order: $this->order,
             taxRateResolver: $taxRateResolver,
             shippingChargesProcessor: $this->createMock(OrderProcessorInterface::class),
             taxCalculator: $taxCalculator,
             parameterBag: $this->createMock(ParameterBagInterface::class),
+            orderNumberAssigner: $numberAssignerMock,
             merchantData: $this->merchantData
         );
     }

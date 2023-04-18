@@ -10,6 +10,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController;
 use Payum\Core\Payum;
 use SM\Factory\FactoryInterface;
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\Order;
 use Sylius\Component\Core\Model\Payment;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
@@ -26,16 +27,23 @@ class KlarnaCheckoutControllerTest extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $this->controller = new KlarnaCheckoutController(
-            $this->createMock(OrderRepositoryInterface::class),
-            $this->createMock(BasicAuthenticationRetrieverInterface::class),
-            $this->createMock(TaxRateResolverInterface::class),
-            $this->createMock(OrderProcessorInterface::class),
-            $this->createMock(Payum::class),
-            $this->createMock(ParameterBagInterface::class),
-            $this->createMock(ClientInterface::class),
-            $this->createMock(CalculatorInterface::class),
-            $this->createMock(FactoryInterface::class),
-            $this->createMock(EntityManagerInterface::class)
+            orderRepository: $this->createMock(OrderRepositoryInterface::class),
+            basicAuthenticationRetriever: $this->createMock(BasicAuthenticationRetrieverInterface::class),
+            taxRateResolver: $this->createMock(TaxRateResolverInterface::class),
+            shippingChargesProcessor:  $this->createMock(OrderProcessorInterface::class),
+            payum: $this->createMock(Payum::class),
+            parameterBag: $this->createMock(ParameterBagInterface::class),
+            client: $this->createMock(ClientInterface::class),
+            taxCalculator: $this->createMock(CalculatorInterface::class),
+            stateMachineFactory: $this->createMock(FactoryInterface::class),
+            entityManager: $this->createMock(EntityManagerInterface::class),
+            orderNumberAssigner: (new class implements OrderNumberAssignerInterface
+            {
+                public function assignNumber(\Sylius\Component\Order\Model\OrderInterface $order): void
+                {
+                    $order->setNumber(str_pad((string)$order->getId(), 9, '0' ));
+                }
+            }),
         );
     }
 
