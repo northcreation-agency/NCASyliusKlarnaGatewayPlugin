@@ -10,7 +10,7 @@ use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Payment\PaymentTransitions;
 
-class FinalizeEventListener
+class FinalizeEventListener implements FinalizeEventListenerInterface
 {
     public function __construct(
         private FactoryInterface $stateMachineFactory,

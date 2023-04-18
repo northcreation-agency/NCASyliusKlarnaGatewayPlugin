@@ -9,7 +9,7 @@ use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\User\Canonicalizer\Canonicalizer;
 
-class DataUpdater
+class DataUpdater implements DataUpdaterInterface
 {
     public const REQUIRED_API_ADDRESS_KEYS = [
         'given_name',

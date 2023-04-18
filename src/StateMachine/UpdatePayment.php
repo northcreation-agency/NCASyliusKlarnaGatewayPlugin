@@ -6,7 +6,7 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifier;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifierInterface;
 use Payum\Core\Model\GatewayConfigInterface;
 use SM\Factory\FactoryInterface;
 use SM\SMException;
@@ -17,11 +17,11 @@ use Sylius\Component\Core\OrderPaymentTransitions;
 use Sylius\Component\Payment\PaymentTransitions;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-class UpdatePayment
+class UpdatePayment implements UpdatePaymentInterface
 {
     public function __construct(
         private FactoryInterface $stateMachineFactory,
-        private OrderVerifier $orderVerifier,
+        private OrderVerifierInterface $orderVerifier,
         private ParameterBagInterface $parameterBag,
     ) {
     }
