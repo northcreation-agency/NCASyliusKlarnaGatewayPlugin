@@ -21,6 +21,7 @@ use Payum\Core\Security\TokenInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use SM\Factory\FactoryInterface;
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -59,6 +60,7 @@ class KlarnaCheckoutController extends AbstractController
         private CalculatorInterface $taxCalculator,
         private FactoryInterface $stateMachineFactory,
         private EntityManagerInterface $entityManager,
+        private OrderNumberAssignerInterface $orderNumberAssigner,
     ) {
     }
 
@@ -111,6 +113,7 @@ class KlarnaCheckoutController extends AbstractController
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
+            orderNumberAssigner: $this->orderNumberAssigner,
             merchantData: $merchantData,
         );
 

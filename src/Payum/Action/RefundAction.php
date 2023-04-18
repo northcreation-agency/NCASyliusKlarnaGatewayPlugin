@@ -16,6 +16,7 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Exception\UnsupportedApiException;
 use Payum\Core\Model\GatewayConfigInterface;
 use Payum\Core\Request\Capture;
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
@@ -36,6 +37,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
+        private OrderNumberAssignerInterface $orderNumberAssigner,
     ) {
         $this->api = null;
     }
@@ -106,6 +108,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
+            orderNumberAssigner: $this->orderNumberAssigner,
             type: KlarnaRequestStructure::REFUND,
         );
 

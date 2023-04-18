@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Calculator\CalculatorInterface;
@@ -24,6 +25,7 @@ class KlarnaRequestStructure
         private OrderProcessorInterface $shippingChargesProcessor,
         private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
+        private OrderNumberAssignerInterface $orderNumberAssigner,
         private ?MerchantData $merchantData = null,
         private string $type = self::CHECKOUT,
     ) {
@@ -72,17 +74,11 @@ class KlarnaRequestStructure
         $customer = $this->order->getCustomer();
         $billingAddressData = new AddressData($billingAddress, $customer);
 
-        /** @var int|string $orderId */
-        $orderId = $this->order->getId();
-        if (is_int($orderId)) {
-            $orderId = '' . $orderId;
+        if ($this->order->getNumber() === null) {
+            $this->orderNumberAssigner->assignNumber($this->order);
         }
-        $referenceNumber = $this->order->getNumber() ?? str_pad(
-            $orderId,
-            9,
-            '0',
-            \STR_PAD_LEFT,
-        );
+
+        $referenceNumber = $this->order->getNumber();
 
         $requestStructure = [
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',

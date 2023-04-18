@@ -10,6 +10,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use Payum\Core\Model\GatewayConfigInterface;
+use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
@@ -29,6 +30,7 @@ class ActivatePayment implements ActivatePaymentInterface
         private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
+        private OrderNumberAssignerInterface $orderNumberAssigner,
     ) {
     }
 
@@ -83,6 +85,7 @@ class ActivatePayment implements ActivatePaymentInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
+            orderNumberAssigner: $this->orderNumberAssigner,
             type: KlarnaRequestStructure::CAPTURE,
         );
 
