@@ -43,17 +43,18 @@ class OrderLine extends AbstractLineItem
 
         $itemUnitPrice = $orderItem->getUnitPrice();
 
+        $orderItemTotal = $orderItem->getTotal();
         if ($taxRate !== null) {
             $unitTax = $taxCalculator->calculate($orderItem->getFullDiscountedUnitPrice(), $taxRate);
             $taxIsIncluded = $taxRate->isIncludedInPrice();
             $totalTax = $unitTax * $orderItem->getQuantity();
             $unitPrice = $taxIsIncluded ? $itemUnitPrice : $itemUnitPrice + $unitTax;
+            $orderItemTotal = $taxIsIncluded ? $orderItemTotal : $orderItemTotal + $totalTax;
         } else {
             $totalTax = 0;
             $unitPrice = $itemUnitPrice;
         }
 
-        $orderItemTotal = $orderItem->getTotal();
         $this->type = $type;
         $this->reference = $variantCode;
         $this->name = $orderName . ' - ' . $variantName;
@@ -61,7 +62,7 @@ class OrderLine extends AbstractLineItem
         $this->quantityUnit = 'pcs';
         $this->unitPrice = (int) $unitPrice;
         $this->taxRate = $taxRateAmount;
-        $this->totalAmount = $orderItemTotal;
+        $this->totalAmount = (int) $orderItemTotal;
         $unitDiscount = $itemUnitPrice - $orderItem->getFullDiscountedUnitPrice();
         $this->totalDiscountAmount = $this->quantity * $unitDiscount;
         $this->totalTaxAmount = (int) ($totalTax);

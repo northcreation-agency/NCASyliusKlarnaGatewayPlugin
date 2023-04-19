@@ -84,7 +84,11 @@ class KlarnaRequestStructure
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
             'locale' => $locale,
-            'order_amount' => $this->order->getTotal(),
+            'order_amount' => (int) array_reduce(
+                $orderLinesArray,
+                fn($sum, $orderLine) => $sum + (int)$orderLine['total_amount'],
+                0
+            ),
             'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
             'merchant_urls' => $this->merchantData?->toArray() ?? [],
