@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
@@ -21,7 +22,6 @@ use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,10 +34,10 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         private ClientInterface $client,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
-        private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private EntityManagerInterface $entityManager,
     ) {
         $this->api = null;
     }
@@ -106,9 +106,9 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             order: $order,
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             type: KlarnaRequestStructure::REFUND,
         );
 

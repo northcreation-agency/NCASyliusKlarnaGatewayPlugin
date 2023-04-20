@@ -41,13 +41,12 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($hasTax ? $taxRateMock : null);
 
-        $taxCalculator = $this->createMock(CalculatorInterface::class);
-        $taxCalculator
-            ->method('calculate')
-            ->willReturn($hasTax ? 909.0 : 0.0);
+        $variantPrice = $includeTaxInPrice ? $variantPrice : $variantPrice + 909;
+
+        $orderTotal = $variantPrice * 5;
 
         try {
-            $this->orderLine = new OrderLine($this->createOrderItem($variantPrice), $taxRateResolver, $taxCalculator);
+            $this->orderLine = new OrderLine($this->createOrderItem($variantPrice, $orderTotal), $taxRateResolver);
         } catch (\Exception $e) {
             Assert::fail($e->getMessage());
         }
@@ -97,9 +96,11 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         self::assertEquals($expectedStructure, $actualStructure);
     }
 
-    public function testNoAssociatedTaxThrowsNoError(): void
+    public function testTaxIncludedInVariantPriceIsIncludedInOrderLineUnitPrice(): void
     {
-        $this->definedSetUp(hasTax: false);
+        $variantPrice = 10000; // for a rate at 10%, a tax amount will equal 909 per item.
+        $this->definedSetUp(includeTaxInPrice: true, variantPrice: $variantPrice);
+
 
         $expectedStructure = [
             "type" => "physical",
@@ -108,18 +109,18 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
             "quantity" => 5,
             "quantity_unit" => "pcs",
             "unit_price" => 10000,
-            "tax_rate" => 0,
+            "tax_rate" => 1000,
             "total_amount" => 50000,
             "total_discount_amount" => 0,
-            "total_tax_amount" => 0
+            "total_tax_amount" => 4545
         ];
 
         $actualStructure = $this->orderLine->toArray();
 
-        Assert::assertEquals($expectedStructure, $actualStructure);
+        self::assertEquals($expectedStructure, $actualStructure);
     }
 
-    protected function createOrderItem(int $variantPrice = 10000): OrderItemInterface
+    protected function createOrderItem(int $variantPrice = 10000, int $orderTotal = 50000): OrderItemInterface
     {
         $orderItemMock = $this->createMock(OrderItem::class);
 
@@ -134,7 +135,7 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $orderItemMock->method('getQuantity')
             ->willReturn(5);
         $orderItemMock->method('getTotal')
-            ->willReturn(50000);
+            ->willReturn($orderTotal);
         $orderItemMock->method('getUnitPrice')
             ->willReturn($variantPrice);
         $orderItemMock->method('getTaxTotal')

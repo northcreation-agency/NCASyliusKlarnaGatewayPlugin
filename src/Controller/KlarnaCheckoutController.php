@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
@@ -33,7 +32,6 @@ use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Payment\Model\PaymentInterface as PaymentInterfaceAlias;
 use Sylius\Component\Payment\PaymentTransitions;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
@@ -57,7 +55,6 @@ class KlarnaCheckoutController extends AbstractController
         private Payum $payum,
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
-        private CalculatorInterface $taxCalculator,
         private FactoryInterface $stateMachineFactory,
         private EntityManagerInterface $entityManager,
         private OrderNumberAssignerInterface $orderNumberAssigner,
@@ -111,9 +108,9 @@ class KlarnaCheckoutController extends AbstractController
             order: $order,
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             merchantData: $merchantData,
         );
 
@@ -169,11 +166,7 @@ class KlarnaCheckoutController extends AbstractController
         if (is_string($klarnaOrderId)) {
             $this->addKlarnaReference($payment, $klarnaOrderId);
             $this->entityManager->persist($payment);
-            if ($this->entityManager instanceof EntityManager) {
-                $this->entityManager->flush($payment);
-            } else {
-                $this->entityManager->flush();
-            }
+            $this->entityManager->flush();
         }
 
         return new JsonResponse(

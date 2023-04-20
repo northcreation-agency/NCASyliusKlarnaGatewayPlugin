@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
@@ -16,7 +17,6 @@ use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,10 +27,10 @@ class ActivatePayment implements ActivatePaymentInterface
         private ClientInterface $client,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
-        private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -83,9 +83,9 @@ class ActivatePayment implements ActivatePaymentInterface
             order: $order,
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             type: KlarnaRequestStructure::CAPTURE,
         );
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Sylius\Component\Core\Model\OrderItemInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class OrderLine extends AbstractLineItem
@@ -16,7 +15,6 @@ class OrderLine extends AbstractLineItem
     public function __construct(
         OrderItemInterface $orderItem,
         TaxRateResolverInterface $taxRateResolver,
-        CalculatorInterface $taxCalculator,
         string $type = 'physical',
         string $locale = 'en_US',
     ) {
@@ -43,28 +41,21 @@ class OrderLine extends AbstractLineItem
 
         $itemUnitPrice = $orderItem->getUnitPrice();
 
-        if ($taxRate !== null) {
-            $unitTax = $taxCalculator->calculate($orderItem->getFullDiscountedUnitPrice(), $taxRate);
-            $taxIsIncluded = $taxRate->isIncludedInPrice();
-            $totalTax = $unitTax * $orderItem->getQuantity();
-            $unitPrice = $taxIsIncluded ? $itemUnitPrice : $itemUnitPrice + $unitTax;
-        } else {
-            $totalTax = 0;
-            $unitPrice = $itemUnitPrice;
-        }
-
         $orderItemTotal = $orderItem->getTotal();
+        $quantity = $orderItem->getQuantity();
+        $unitPrice = (int) ($orderItemTotal / $quantity);
+
         $this->type = $type;
         $this->reference = $variantCode;
         $this->name = $orderName . ' - ' . $variantName;
         $this->quantity = $orderItem->getQuantity();
         $this->quantityUnit = 'pcs';
-        $this->unitPrice = (int) $unitPrice;
+        $this->unitPrice = $unitPrice;
         $this->taxRate = $taxRateAmount;
         $this->totalAmount = $orderItemTotal;
         $unitDiscount = $itemUnitPrice - $orderItem->getFullDiscountedUnitPrice();
         $this->totalDiscountAmount = $this->quantity * $unitDiscount;
-        $this->totalTaxAmount = (int) ($totalTax);
+        $this->totalTaxAmount = $orderItem->getTaxTotal();
     }
 
     public function getLineItem(): LineItemInterface
