@@ -33,7 +33,6 @@ use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Payment\Model\PaymentInterface as PaymentInterfaceAlias;
 use Sylius\Component\Payment\PaymentTransitions;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
@@ -57,7 +56,6 @@ class KlarnaCheckoutController extends AbstractController
         private Payum $payum,
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
-        private CalculatorInterface $taxCalculator,
         private FactoryInterface $stateMachineFactory,
         private EntityManagerInterface $entityManager,
         private OrderNumberAssignerInterface $orderNumberAssigner,
@@ -111,7 +109,6 @@ class KlarnaCheckoutController extends AbstractController
             order: $order,
             taxRateResolver: $this->taxRateResolver,
             shippingChargesProcessor: $this->shippingChargesProcessor,
-            taxCalculator: $this->taxCalculator,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
             merchantData: $merchantData,

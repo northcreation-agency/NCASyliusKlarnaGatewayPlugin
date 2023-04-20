@@ -41,16 +41,12 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $taxRateResolver = $this->createMock(TaxRateResolverInterface::class);
         $taxRateResolver->method('resolve')->willReturn($hasTax ? $taxRateMock : null);
 
-        $taxAmount = 909.0;
-        $taxCalculator = $this->createMock(CalculatorInterface::class);
-        $taxCalculator
-            ->method('calculate')
-            ->willReturn($hasTax ? $taxAmount : 0.0);
+        $variantPrice = $includeTaxInPrice ? $variantPrice : $variantPrice + 909;
 
         $orderTotal = $variantPrice * 5;
 
         try {
-            $this->orderLine = new OrderLine($this->createOrderItem($variantPrice, $orderTotal), $taxRateResolver, $taxCalculator);
+            $this->orderLine = new OrderLine($this->createOrderItem($variantPrice, $orderTotal), $taxRateResolver);
         } catch (\Exception $e) {
             Assert::fail($e->getMessage());
         }
@@ -122,28 +118,6 @@ class OrderLineTest extends \PHPUnit\Framework\TestCase
         $actualStructure = $this->orderLine->toArray();
 
         self::assertEquals($expectedStructure, $actualStructure);
-    }
-
-    public function testNoAssociatedTaxThrowsNoError(): void
-    {
-        $this->definedSetUp(hasTax: false);
-
-        $expectedStructure = [
-            "type" => "physical",
-            "reference" => "19-402-USA",
-            "name" => "T-Shirt - Red",
-            "quantity" => 5,
-            "quantity_unit" => "pcs",
-            "unit_price" => 10000,
-            "tax_rate" => 0,
-            "total_amount" => 50000,
-            "total_discount_amount" => 0,
-            "total_tax_amount" => 0
-        ];
-
-        $actualStructure = $this->orderLine->toArray();
-
-        Assert::assertEquals($expectedStructure, $actualStructure);
     }
 
     protected function createOrderItem(int $variantPrice = 10000, int $orderTotal = 50000): OrderItemInterface

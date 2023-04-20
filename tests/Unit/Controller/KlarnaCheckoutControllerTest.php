@@ -34,7 +34,6 @@ class KlarnaCheckoutControllerTest extends \PHPUnit\Framework\TestCase
             payum: $this->createMock(Payum::class),
             parameterBag: $this->createMock(ParameterBagInterface::class),
             client: $this->createMock(ClientInterface::class),
-            taxCalculator: $this->createMock(CalculatorInterface::class),
             stateMachineFactory: $this->createMock(FactoryInterface::class),
             entityManager: $this->createMock(EntityManagerInterface::class),
             orderNumberAssigner: (new class implements OrderNumberAssignerInterface

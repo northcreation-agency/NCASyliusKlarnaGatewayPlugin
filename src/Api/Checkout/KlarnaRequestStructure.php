@@ -7,7 +7,6 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -23,7 +22,6 @@ class KlarnaRequestStructure
         private OrderInterface $order,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
-        private CalculatorInterface $taxCalculator,
         private ParameterBagInterface $parameterBag,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private ?MerchantData $merchantData = null,
@@ -84,10 +82,10 @@ class KlarnaRequestStructure
             'purchase_country' => $this->order->getBillingAddress()?->getCountryCode() ?? '',
             'purchase_currency' => $this->order->getCurrencyCode(),
             'locale' => $locale,
-            'order_amount' => (int) array_reduce(
+            'order_amount' => array_reduce(
                 $orderLinesArray,
-                fn($sum, $orderLine) => $sum + (int)$orderLine['total_amount'],
-                0
+                fn (int $sum, array $orderLine) => $sum + (int) $orderLine['total_amount'],
+                0,
             ),
             'order_tax_amount' => $this->getTaxTotal(array_merge($orderLines, $shipmentLines)),
             'order_lines' => $orderLinesArray,
@@ -203,7 +201,6 @@ class KlarnaRequestStructure
             $orderLines[] = new OrderLine(
                 $item,
                 $this->taxRateResolver,
-                $this->taxCalculator,
                 'physical',
                 $currentLocale,
             );

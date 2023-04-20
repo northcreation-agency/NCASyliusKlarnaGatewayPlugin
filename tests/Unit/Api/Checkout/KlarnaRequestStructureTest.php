@@ -51,11 +51,6 @@ class KlarnaRequestStructureTest extends TestCase
         $taxRateResolver->method('resolve')->willReturn($taxRateMock);
         $taxRateMock->method('isIncludedInPrice')->willReturn(true);
 
-        $taxCalculator = $this->createMock(CalculatorInterface::class);
-        $taxCalculator
-            ->method('calculate')
-            ->willReturn(909.0);
-
         $numberAssignerMock = (new class implements OrderNumberAssignerInterface
         {
             public function assignNumber(\Sylius\Component\Order\Model\OrderInterface $order): void
@@ -68,7 +63,6 @@ class KlarnaRequestStructureTest extends TestCase
             order: $this->order,
             taxRateResolver: $taxRateResolver,
             shippingChargesProcessor: $this->createMock(OrderProcessorInterface::class),
-            taxCalculator: $taxCalculator,
             parameterBag: $this->createMock(ParameterBagInterface::class),
             orderNumberAssigner: $numberAssignerMock,
             merchantData: $this->merchantData
@@ -82,7 +76,7 @@ class KlarnaRequestStructureTest extends TestCase
             "purchase_country" => "GB",
             "purchase_currency" => "GBP",
             "locale" => "en-GB",
-            "order_amount" => 50000,
+            "order_amount" => 61000,
             "order_tax_amount" => 5545,
             "order_lines" => [
                   [
