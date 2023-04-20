@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
@@ -36,6 +37,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private EntityManagerInterface $entityManager,
     ) {
         $this->api = null;
     }
@@ -106,6 +108,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             type: KlarnaRequestStructure::REFUND,
         );
 

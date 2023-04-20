@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
@@ -24,6 +25,7 @@ class KlarnaRequestStructure
         private OrderProcessorInterface $shippingChargesProcessor,
         private ParameterBagInterface $parameterBag,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private EntityManagerInterface $entityManager,
         private ?MerchantData $merchantData = null,
         private string $type = self::CHECKOUT,
     ) {
@@ -74,6 +76,7 @@ class KlarnaRequestStructure
 
         if ($this->order->getNumber() === null) {
             $this->orderNumberAssigner->assignNumber($this->order);
+            $this->entityManager->persist($this->order);
         }
 
         $referenceNumber = $this->order->getNumber();

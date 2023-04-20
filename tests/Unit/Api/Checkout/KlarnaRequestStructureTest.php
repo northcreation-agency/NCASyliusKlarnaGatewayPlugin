@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\NorthCreationAgency\SyliusKlarnaGatewayPlugin\Unit\Api\Checkout;
 
+use Doctrine\ORM\EntityManagerInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -65,6 +66,7 @@ class KlarnaRequestStructureTest extends TestCase
             shippingChargesProcessor: $this->createMock(OrderProcessorInterface::class),
             parameterBag: $this->createMock(ParameterBagInterface::class),
             orderNumberAssigner: $numberAssignerMock,
+            entityManager: self::createMock(EntityManagerInterface::class),
             merchantData: $this->merchantData
         );
     }

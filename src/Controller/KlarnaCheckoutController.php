@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
@@ -111,6 +110,7 @@ class KlarnaCheckoutController extends AbstractController
             shippingChargesProcessor: $this->shippingChargesProcessor,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             merchantData: $merchantData,
         );
 
@@ -166,11 +166,7 @@ class KlarnaCheckoutController extends AbstractController
         if (is_string($klarnaOrderId)) {
             $this->addKlarnaReference($payment, $klarnaOrderId);
             $this->entityManager->persist($payment);
-            if ($this->entityManager instanceof EntityManager) {
-                $this->entityManager->flush($payment);
-            } else {
-                $this->entityManager->flush();
-            }
+            $this->entityManager->flush();
         }
 
         return new JsonResponse(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
@@ -29,6 +30,7 @@ class ActivatePayment implements ActivatePaymentInterface
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -83,6 +85,7 @@ class ActivatePayment implements ActivatePaymentInterface
             shippingChargesProcessor: $this->shippingChargesProcessor,
             parameterBag: $this->parameterBag,
             orderNumberAssigner: $this->orderNumberAssigner,
+            entityManager: $this->entityManager,
             type: KlarnaRequestStructure::CAPTURE,
         );
 
