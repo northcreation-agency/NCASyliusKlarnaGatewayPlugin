@@ -9,9 +9,13 @@ use Symfony\Component\HttpFoundation\Response;
 class StatusDO
 {
     public const PAYMENT_CONFIRMED = Response::HTTP_NO_CONTENT;
+
     public const PAYMENT_CAPTURED = Response::HTTP_CREATED;
+
     public const STATUS_CAPTURED = 'CAPTURED';
+
     public const ERROR_CODE_CAPTURE_NOT_ALLOWED = 'CAPTURE_NOT_ALLOWED';
+
     public const PAYMENT_ALREADY_CAPTURED = Response::HTTP_ACCEPTED;
 
     public function __construct(

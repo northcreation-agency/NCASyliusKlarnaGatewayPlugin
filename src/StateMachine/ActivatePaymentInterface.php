@@ -20,7 +20,7 @@ interface ActivatePaymentInterface
 
     /**
      * Send capture request and returns status code
-     * @return int
+     *
      * @throws ApiException
      * @throws GuzzleException
      */

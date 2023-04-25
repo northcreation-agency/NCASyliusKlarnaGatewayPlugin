@@ -36,7 +36,7 @@ class ActivatePayment implements ActivatePaymentInterface
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private EntityManagerInterface $entityManager,
-        private Factory $stateMachineFactory
+        private Factory $stateMachineFactory,
     ) {
     }
 
@@ -73,7 +73,6 @@ class ActivatePayment implements ActivatePaymentInterface
      */
     public function sendCaptureRequest(SyliusPaymentInterface $payment): int
     {
-
         $paymentMethod = $payment->getMethod();
         assert($paymentMethod instanceof PaymentMethodInterface);
 
@@ -109,7 +108,6 @@ class ActivatePayment implements ActivatePaymentInterface
 
         $payload = $klarnaRequestStructure->toArray();
 
-        $status = 400;
         try {
             $response = $this->client->request(
                 'POST',
@@ -180,15 +178,11 @@ class ActivatePayment implements ActivatePaymentInterface
     }
 
     /**
-     * @param OrderInterface $order
-     * @return int
      * @throws ApiException
      * @throws GuzzleException
      */
     private function confirmCaptured(OrderInterface $order): int
     {
-        $payments = $order->getPayments();
-
         $klarnaPayment = $this->getKlarnaPayment($order);
 
         assert($klarnaPayment instanceof PaymentInterface);
@@ -252,6 +246,7 @@ class ActivatePayment implements ActivatePaymentInterface
 
             if ($this->supportsPaymentMethod($method)) {
                 $klarnaPayment = $payment;
+
                 break;
             }
         }
