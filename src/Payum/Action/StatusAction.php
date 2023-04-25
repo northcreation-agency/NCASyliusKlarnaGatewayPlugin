@@ -24,7 +24,7 @@ class StatusAction implements ActionInterface
         $details = $payment->getDetails();
 
         match ($details['status'] ?? 201) {
-            200, 204 => $request->markCaptured(),
+            200, 204 => $request->markAuthorized(),
             400 => $request->markFailed(),
             default => $request->markNew()
         };

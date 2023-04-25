@@ -41,7 +41,7 @@ class UpdatePayment implements UpdatePaymentInterface
             $this->orderVerifier->update($order);
 
             $stateMachine = $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH);
-            $stateMachine->apply(OrderPaymentTransitions::TRANSITION_PAY);
+            $stateMachine->apply(OrderPaymentTransitions::TRANSITION_AUTHORIZE);
 
             $latestPayment = $order->getLastPayment();
             if (null === $latestPayment) {
@@ -49,7 +49,7 @@ class UpdatePayment implements UpdatePaymentInterface
             }
 
             $stateMachine = $this->stateMachineFactory->get($latestPayment, PaymentTransitions::GRAPH);
-            $stateMachine->apply(PaymentTransitions::TRANSITION_COMPLETE);
+            $stateMachine->apply(PaymentTransitions::TRANSITION_AUTHORIZE);
         } else {
             /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
              * @var bool $silentException
