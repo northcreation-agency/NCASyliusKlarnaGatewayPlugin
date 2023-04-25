@@ -19,10 +19,12 @@ interface ActivatePaymentInterface
     public function activate(OrderInterface $order): void;
 
     /**
+     * Send capture request and returns status code
+     *
      * @throws ApiException
      * @throws GuzzleException
      */
-    public function sendCaptureRequest(SyliusPaymentInterface $payment): void;
+    public function sendCaptureRequest(SyliusPaymentInterface $payment): int;
 
     public function replacePlaceholder(string $replacement, string $string): string;
 

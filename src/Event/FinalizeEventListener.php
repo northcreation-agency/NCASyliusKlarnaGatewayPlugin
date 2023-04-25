@@ -33,7 +33,7 @@ class FinalizeEventListener implements FinalizeEventListenerInterface
     protected function updateState(OrderInterface $order): void
     {
         $stateMachine = $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH);
-        $stateMachine->apply(OrderPaymentTransitions::TRANSITION_PAY);
+        $stateMachine->apply(OrderPaymentTransitions::TRANSITION_AUTHORIZE);
 
         $latestPayment = $order->getLastPayment();
         if (null === $latestPayment) {
@@ -41,6 +41,6 @@ class FinalizeEventListener implements FinalizeEventListenerInterface
         }
 
         $stateMachine = $this->stateMachineFactory->get($latestPayment, PaymentTransitions::GRAPH);
-        $stateMachine->apply(PaymentTransitions::TRANSITION_COMPLETE);
+        $stateMachine->apply(PaymentTransitions::TRANSITION_AUTHORIZE);
     }
 }
