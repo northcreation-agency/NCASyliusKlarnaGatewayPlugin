@@ -32,7 +32,6 @@ class CancelPayment implements CancelPaymentInterface
      */
     public function cancel(PaymentInterface $payment): void
     {
-
         $paymentMethod = $payment->getMethod();
         assert($paymentMethod instanceof PaymentMethodInterface);
         if (!$this->supportsPaymentMethod($paymentMethod)) {
@@ -79,7 +78,7 @@ class CancelPayment implements CancelPaymentInterface
                     'headers' => [
                         'Authorization' => $basicAuthString,
                         'Content-Type' => 'application/json',
-                    ]
+                    ],
                 ],
             );
 

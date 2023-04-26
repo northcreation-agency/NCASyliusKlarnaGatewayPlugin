@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
 use GuzzleHttp\Exception\GuzzleException;
