@@ -9,6 +9,8 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\GatewayConfigResolver;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\GatewayConfigResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
@@ -58,6 +60,7 @@ class KlarnaCheckoutController extends AbstractController
         private FactoryInterface $stateMachineFactory,
         private EntityManagerInterface $entityManager,
         private OrderNumberAssignerInterface $orderNumberAssigner,
+        private GatewayConfigResolverInterface $gatewayConfigResolver,
     ) {
     }
 
@@ -89,7 +92,7 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
-        $merchantData = $this->getMerchantData($payment);
+        $merchantData = $this->gatewayConfigResolver->getMerchantData($payment);
 
         if (null === $merchantData) {
             return new JsonResponse([
@@ -474,61 +477,6 @@ class KlarnaCheckoutController extends AbstractController
             'north_creation_agency_sylius_klarna_gateway_confirm',
             ['order_token' => $payment->getOrder()?->getTokenValue()],
         );
-    }
-
-    protected function getMerchantData(PaymentInterface $payment): ?MerchantData
-    {
-        $method = $payment->getMethod();
-        Assert::isInstanceOf($method, PaymentMethodInterface::class);
-
-        /** @var ?array $merchantData */
-        $merchantData = $method->getGatewayConfig()?->getConfig()['merchantUrls'] ?? null;
-        if (null === $merchantData) {
-            return null;
-        }
-
-        $order = $payment->getOrder();
-        if (null === $order) {
-            return null;
-        }
-
-        /** @var string|null $pushUrl */
-        $pushUrl = $this->getPushUrl($order);
-
-        /** @var string|null $termsUrl */
-        $termsUrl = $merchantData['termsUrl'] ?? null;
-
-        /** @var string|null $checkoutUrl */
-        $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
-
-        /** @var bool $headlessMode */
-        $headlessMode = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.read_order') ?? false;
-
-        /** @var string|null $confirmationHeadfullUrl */
-        $confirmationHeadfullUrl = $this->generateUrl(
-            'north_creation_agency_sylius_klarna_gateway_confirm',
-            ['order_token' => $payment->getOrder()?->getTokenValue() ?? ''],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-
-        /** @var string|null $confirmationUrl */
-        $confirmationUrl = $headlessMode ? $merchantData['confirmationUrl'] : $confirmationHeadfullUrl;
-
-        if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
-            return null;
-        }
-
-        try {
-            /** @var RouterInterface $router */
-            $router = $this->container->get('router');
-            $urlGenerator = new UrlGenerator($router);
-            $termsUrl = $urlGenerator->generateAbsoluteURL($termsUrl);
-            $checkoutUrl = $urlGenerator->generateAbsoluteURL($checkoutUrl);
-            $confirmationUrl = $urlGenerator->generateAbsoluteURL($confirmationUrl, ['tokenValue' => $order->getTokenValue() ?? '']);
-        } catch (\Exception $e) {
-        }
-
-        return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
     }
 
     protected function getPayumCaptureDoUrl(PaymentInterface $payment): string
