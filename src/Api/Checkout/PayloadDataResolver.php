@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Webmozart\Assert\Assert;
 
-class GatewayConfigResolver implements GatewayConfigResolverInterface
+class PayloadDataResolver implements PayloadDataResolverInterface
 {
 
     public function __construct(
@@ -83,6 +83,20 @@ class GatewayConfigResolver implements GatewayConfigResolverInterface
         return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
     }
 
+    public function getOptionsData(PaymentInterface $payment): OptionsData
+    {
+        $method = $payment->getMethod();
+        Assert::isInstanceOf($method, PaymentMethodInterface::class);
+
+        /** @var array $b2bSettings */
+        $b2bSettings = $method->getGatewayConfig()?->getConfig()['b2bSettings'] ?? [];
+
+
+        return new OptionsData(
+            b2bSettings: $b2bSettings
+        );
+    }
+
     /**
      * @param string $route
      * @param array $parameters
@@ -123,4 +137,8 @@ class GatewayConfigResolver implements GatewayConfigResolverInterface
         return $pushUrl;
     }
 
+    public function getCustomerData(array $customerData): CustomerData
+    {
+        // TODO: Implement getCustomerData() method.
+    }
 }

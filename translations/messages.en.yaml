@@ -10,6 +10,15 @@ nca_sylius_klarna_gateway_plugin:
             merchant_urls:
                 label: Merchant URLs
                 help: The merchant URLs to use for the payment gateway.
+            b2b_settings:
+                label: B2B Settings
+                help: ''
+            support_b2b:
+                label: Allow B2B customers
+                help: This will allow both B2C and B2B customers in Klarna Checkout. Requires the merchant store to have set this with Klarna.
+            b2bTermsUrl:
+                label: Set B2B specific terms URL
+                help: This is not required, but if your terms differs between B2C and B2B customers, add the URL here. Otherwise defaults to regular Merchant Terms URL.
     ui:
         terms_url: 
             label: Terms URL

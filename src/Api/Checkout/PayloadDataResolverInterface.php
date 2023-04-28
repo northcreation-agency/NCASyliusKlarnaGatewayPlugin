@@ -6,11 +6,15 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 
-interface GatewayConfigResolverInterface
+interface PayloadDataResolverInterface
 {
     /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
     public function getMerchantData(PaymentInterface $payment): ?MerchantData;
+
+    public function getOptionsData(PaymentInterface $payment): OptionsData;
+
+    public function getCustomerData(array $customerData): CustomerData;
 }

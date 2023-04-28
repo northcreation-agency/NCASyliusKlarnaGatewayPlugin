@@ -9,8 +9,8 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\GatewayConfigResolver;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\GatewayConfigResolverInterface;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolver;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
@@ -50,17 +50,17 @@ class KlarnaCheckoutController extends AbstractController
     public const WIDGET_SNIPPET_KEY = 'html_snippet';
 
     public function __construct(
-        private OrderRepositoryInterface $orderRepository,
+        private OrderRepositoryInterface              $orderRepository,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
-        private TaxRateResolverInterface $taxRateResolver,
-        private OrderProcessorInterface $shippingChargesProcessor,
-        private Payum $payum,
-        private ParameterBagInterface $parameterBag,
-        private ClientInterface $client,
-        private FactoryInterface $stateMachineFactory,
-        private EntityManagerInterface $entityManager,
-        private OrderNumberAssignerInterface $orderNumberAssigner,
-        private GatewayConfigResolverInterface $gatewayConfigResolver,
+        private TaxRateResolverInterface              $taxRateResolver,
+        private OrderProcessorInterface               $shippingChargesProcessor,
+        private Payum                                 $payum,
+        private ParameterBagInterface                 $parameterBag,
+        private ClientInterface                       $client,
+        private FactoryInterface                      $stateMachineFactory,
+        private EntityManagerInterface                $entityManager,
+        private OrderNumberAssignerInterface          $orderNumberAssigner,
+        private PayloadDataResolverInterface          $payloadDataResolver,
     ) {
     }
 
@@ -69,7 +69,7 @@ class KlarnaCheckoutController extends AbstractController
      *
      * @throws \Exception
      */
-    public function getSnippet(string $tokenValue): Response
+    public function getSnippet(string $tokenValue, ?string $organizationNumber): Response
     {
         /** @var ?OrderInterface $order */
         $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
@@ -92,7 +92,7 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
-        $merchantData = $this->gatewayConfigResolver->getMerchantData($payment);
+        $merchantData = $this->payloadDataResolver->getMerchantData($payment);
 
         if (null === $merchantData) {
             return new JsonResponse([
@@ -107,6 +107,8 @@ class KlarnaCheckoutController extends AbstractController
             $klarnaUri .= '/' . $klarnaOrderId;
         }
 
+        $optionsData = $this->payloadDataResolver->getOptionsData($payment, $organizationNumber);
+
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
             taxRateResolver: $this->taxRateResolver,
@@ -115,6 +117,7 @@ class KlarnaCheckoutController extends AbstractController
             orderNumberAssigner: $this->orderNumberAssigner,
             entityManager: $this->entityManager,
             merchantData: $merchantData,
+            optionsData: $optionsData
         );
 
         $requestData = $klarnaRequestStructure->toArray();
