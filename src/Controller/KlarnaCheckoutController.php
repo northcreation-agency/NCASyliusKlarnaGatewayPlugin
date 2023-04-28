@@ -9,10 +9,8 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolver;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\MerchantData;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
@@ -69,7 +67,7 @@ class KlarnaCheckoutController extends AbstractController
      *
      * @throws \Exception
      */
-    public function getSnippet(string $tokenValue, ?string $organizationNumber): Response
+    public function getSnippet(string $tokenValue, ?Request $request = null): Response
     {
         /** @var ?OrderInterface $order */
         $order = $this->orderRepository->findOneBy(['tokenValue' => $tokenValue]);
@@ -107,7 +105,12 @@ class KlarnaCheckoutController extends AbstractController
             $klarnaUri .= '/' . $klarnaOrderId;
         }
 
-        $optionsData = $this->payloadDataResolver->getOptionsData($payment, $organizationNumber);
+        $optionsData = $this->payloadDataResolver->getOptionsData($payment);
+
+        $customerParams = [];
+        if ($request !== null) {
+            $customerParams = $request->query->all();
+        }
 
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
@@ -117,7 +120,8 @@ class KlarnaCheckoutController extends AbstractController
             orderNumberAssigner: $this->orderNumberAssigner,
             entityManager: $this->entityManager,
             merchantData: $merchantData,
-            optionsData: $optionsData
+            optionsData: $optionsData,
+            customerData: $this->payloadDataResolver->getCustomerData($customerParams)
         );
 
         $requestData = $klarnaRequestStructure->toArray();

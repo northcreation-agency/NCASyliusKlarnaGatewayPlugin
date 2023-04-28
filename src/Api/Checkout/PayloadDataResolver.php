@@ -139,6 +139,12 @@ class PayloadDataResolver implements PayloadDataResolverInterface
 
     public function getCustomerData(array $customerData): CustomerData
     {
-        // TODO: Implement getCustomerData() method.
+        return new CustomerData(
+            type: $customerData['type'] ?? 'person',
+            organizationRegistrationId: $customerData['organizationRegistrationId'] ?? null,
+            vatId: $customerData['vatId'] ?? null,
+            gender: $customerData['gender'] ?? null,
+            dateOfBirth: $customerData['dateOfBirth'] ?? null
+        );
     }
 }

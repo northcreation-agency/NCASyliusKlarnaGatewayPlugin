@@ -73,18 +73,20 @@ App\Model\Order\Order:
             controller: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController::getSnippet
             openapi_context:
                 summary: Returns a Klarna checkout snippet
-                responses:
-                    200:
-                        description: 'OK'
-                        content:
-                            application/json:
-                                schema:
-                                    type: object
-                                    properties:
-                                        snippet:
-                                            type: string
-                                            description: 'The Klarna checkout snippet'
-                                            example: '<div id="klarna-checkout-container"></div>'
+                parameters:
+                    -   name: 'organizationRegistrationId'
+                        in: 'query'
+                        description: 'Optional Organization Registraion ID for B2B customer. Example: 556036-0793'
+                        required: false
+                        schema:
+                            type: string
+                    -   name: 'type'
+                        in: 'query'
+                        description: 'Select "organization" for b2b customers'
+                        required: false
+                        schema:
+                            type: string
+                            enum: ['person', 'organization']
         shop_klarna_confirmation_widget:
             method: 'GET'
             path: 'shop/orders/{tokenValue}/klarna-confirmation-widget'
