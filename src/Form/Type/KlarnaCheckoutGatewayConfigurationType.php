@@ -6,7 +6,9 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Form\Type;
 
 use Payum\Core\Security\CypherInterface;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -76,6 +78,14 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
                 'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.label',
                 'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.help',
             ])
+
+            // Set allow B2B customers
+            ->add('b2bSettings', B2BType::class, [
+                'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.b2b_settings.label',
+                'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.b2b_settings.help',
+                'required' => false
+            ])
+
         ;
     }
 
