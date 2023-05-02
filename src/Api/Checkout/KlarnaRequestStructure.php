@@ -105,7 +105,7 @@ class KlarnaRequestStructure
             $requestStructure['shipping_address'] = $shippingAddressData->toArray();
         }
 
-        if ($this->optionsData !== null) {
+        if ($this->optionsData !== null && count($this->optionsData->toArray()) > 0) {
             $requestStructure['options'] = $this->optionsData->toArray();
         }
 

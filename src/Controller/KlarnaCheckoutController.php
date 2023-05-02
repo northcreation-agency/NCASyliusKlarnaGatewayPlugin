@@ -149,6 +149,9 @@ class KlarnaCheckoutController extends AbstractController
 
             /** @var string|null $klarnaOrderId */
             $klarnaOrderId = $contents['order_id'] ?? null;
+            if (is_string($klarnaOrderId)) {
+                $this->addKlarnaReference($payment, $klarnaOrderId);
+            }
 
             /** @var string $snippet */
             $snippet = $contents[self::WIDGET_SNIPPET_KEY] ?? throw new \Exception(
@@ -175,7 +178,6 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         if (is_string($klarnaOrderId)) {
-            $this->addKlarnaReference($payment, $klarnaOrderId);
             $this->entityManager->persist($payment);
             $this->entityManager->flush();
         }
