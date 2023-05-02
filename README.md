@@ -2,8 +2,25 @@
 <h1 align="center">Sylius Klarna Gateway Plugin</h1>
 
 <p align="center">Headless checkout</p>
+  
+## Table of contents  
+* [Plugin Development Documentation](#pddoc)  
+* [Configuration](#r-config)  
+  * [Environment variables](#r-config-env)  
+  * [General configurations](#r-config-general)  
+  * [State machine](#r-config-sm)  
+  * [Routes](#r-config-routes)  
+  * [Template](#r-config-template)  
+* [Credentials encryption](#r-cred)
+* [Klarna Checkout API](#r-api)
+  * [Additional parameter explanation](#r-api-additional)
+* [Quickstart Development](#r-quickstart)
+* [Usage](#r-usage)
+  * [Running plugin tests](#r-tests)
+  * [Opening Sylius with your plugin](#r-tests-open)
+  
 
-## Documentation
+<h2 id="r-pddoc">Plugin Development Documentation</h2>
 
 Official Plugin guide: https://docs.sylius.com/en/latest/book/plugins/guide/index.html  
 Following this tutorial for *custom payment gateways*: https://docs.sylius.com/en/1.12/cookbook/payments/custom-payment-gateway.html  
@@ -11,14 +28,14 @@ And this tutorial for *Klarna Checkout*: https://docs.klarna.com/klarna-checkout
 Official API documentation: https://docs.klarna.com/api/checkout/  
 Payum documentation for encrypting gateway configuration: https://github.com/Payum/Payum/blob/master/docs/symfony/encrypt-gateway-configs-stored-in-database.md  
 
-## Configuration
+<h2 id="r-config">Configuration</h2>
 
-### Environment variables
+<h3 id="r-config-env">Environment variables</h3>
 ```ENV
 PAYUM_CYPHER_KEY=OUTPUT_OF_vendor/bin/defuse-generate-key
 ```
 
-### General configurations
+<h3 id="r-config-general">General configurations</h3>
 Add cypher-key configuration. This should point to the environment variable defined above.
 
 Add the Klarna Checkout URI. This URI is dependent on region and if it is in development or in production.
@@ -45,7 +62,7 @@ north_creation_agency_sylius_klarna_gateway:
 `silent_exception` is if an exception should  not be thrown if payment could not be verified on Klarna. When set to `true` a cart will still be created if payment has not been handled by Klarna.
 `refund.include_shipping` defaults to false. This will refund the whole amount of a purchase except the shipping cost when set to false. When set to true, the shipping cost is included in the refund.
 
-### State Machine  
+<h3 id="r-config-sm">State Machine</h3>  
 Import state machine configuration for refund hook.
 In config/packages/_sylius.yaml, import the configuration:
 ```yaml
@@ -53,7 +70,7 @@ imports:
     - { resource: "@NorthCreationAgencySyliusKlarnaGatewayPlugin/config/packages/state_machine.yaml" }
 ```
 
-### Routes
+<h3 id="r-config-routes">Routes</h3>
 Default Sylius Klarna routes are imported in your app's routes.yaml file:
 ```yaml 
 app_klarna:
@@ -160,7 +177,7 @@ api_platform.mapping.paths in tests/Application/config/packages/api_platform.yam
 - '%kernel.project_dir%/vendor/andersbjorkland/sylius-klarna-gateway-plugin/config/api_platform'
 ```
 
-### Template
+<h3 id="r-config-template">Template</h3>
 The Klarna Widget is used in an iframe. This boilerplate contains required JavaScript code and 
 where to paste the widget:  
 ```html 
@@ -203,20 +220,20 @@ After the purchase has been handled by Klarna and redirected to the checkout pag
 has been correctly handled, you may retrieve the order-status to `/checkout/v3/orders/{klarna-order-id}`, which will 
 contain the confirmation snippet. Paste this is a similar fashion as the one before.
 
-## Credentials encryption
+<h2 id="r-cred">Credentials encryption</h2>
 Makes use of `defuse/php-encryption` to encrypt the credentials. 
 This in turn requires `ext-openssl` to be installed on the server.
 
-## Klarna Checkout API  
+<h2 id="r-api">Klarna Checkout API</h2>
 The test-url for the api is accessed via: https://beeceptor.com/console/klarna
 
-### Additional parameter explanation
+<h3 id="r-api-additional">Additional parameter explanation</h3>
 *When not covered by official documentation*  
 In general, all `amount`-parameters are in cents or equivalent. `2000`: EUR 20.00  
 `tax-rate` is a percentage value. `25`: 25% = 25/100 = 0.25  
 `order-amount` is the total amount of the order, including tax.
 
-## Quickstart Development
+<h2 id="r-quickstart">Quickstart Development</h2>
 
 1. Git clone project.
 
@@ -237,9 +254,9 @@ In general, all `amount`-parameters are in cents or equivalent. `2000`: EUR 20.0
    > Note: If you do not have Symfony CLI installed, you can use the php built-in server instead:  
    > `php -S localhost:8000 -t public`
 
-## Usage
+<h2 id="r-usage">Usage</h2>
 
-### Running plugin tests
+<h3 id="r-tests">Running plugin tests</h3>
 
   - PHPUnit
 
@@ -302,7 +319,7 @@ In general, all `amount`-parameters are in cents or equivalent. `2000`: EUR 20.0
     vendor/bin/ecs check src
     ```
 
-### Opening Sylius with your plugin
+<h3 id="r-tests-open">Opening Sylius with your plugin<h3>
 
 - Using `test` environment:
 
