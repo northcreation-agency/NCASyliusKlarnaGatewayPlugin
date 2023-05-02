@@ -8,6 +8,7 @@ use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class WidgetRenderController extends \Symfony\Bundle\FrameworkBundle\Controller\AbstractController
@@ -18,9 +19,9 @@ class WidgetRenderController extends \Symfony\Bundle\FrameworkBundle\Controller\
     ) {
     }
 
-    public function widget(string $tokenValue): Response
+    public function widget(string $tokenValue, Request $request): Response
     {
-        $snippetResponse = $this->klarnaCheckoutController->getSnippet($tokenValue);
+        $snippetResponse = $this->klarnaCheckoutController->getSnippet($tokenValue, $request);
         $content = $snippetResponse->getContent();
 
         if ($content === false) {

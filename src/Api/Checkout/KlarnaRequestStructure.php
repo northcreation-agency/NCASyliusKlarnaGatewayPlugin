@@ -27,6 +27,8 @@ class KlarnaRequestStructure
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private EntityManagerInterface $entityManager,
         private ?MerchantData $merchantData = null,
+        private ?OptionsData $optionsData = null,
+        private ?CustomerData $customerData = null,
         private string $type = self::CHECKOUT,
     ) {
     }
@@ -101,6 +103,14 @@ class KlarnaRequestStructure
             $shippingAddressData = new AddressData($shippingAddress);
 
             $requestStructure['shipping_address'] = $shippingAddressData->toArray();
+        }
+
+        if ($this->optionsData !== null) {
+            $requestStructure['options'] = $this->optionsData->toArray();
+        }
+
+        if ($this->customerData !== null) {
+            $requestStructure['customer'] = $this->customerData->toArray();
         }
 
         return $requestStructure;

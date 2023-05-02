@@ -76,6 +76,14 @@ class KlarnaCheckoutGatewayConfigurationType extends AbstractType
                 'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.label',
                 'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.merchant_urls.help',
             ])
+
+            // Set allow B2B customers
+            ->add('b2bSettings', B2BType::class, [
+                'label' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.b2b_settings.label',
+                'help' => 'nca_sylius_klarna_gateway_plugin.form.gateway_configuration.b2b_settings.help',
+                'required' => false,
+            ])
+
         ;
     }
 
