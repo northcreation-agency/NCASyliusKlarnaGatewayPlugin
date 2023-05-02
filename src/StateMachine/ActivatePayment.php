@@ -11,6 +11,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
 use Payum\Core\Model\GatewayConfigInterface;
 use SM\Factory\Factory;
 use SM\SMException;
@@ -168,7 +169,8 @@ class ActivatePayment implements ActivatePaymentInterface
         $stateMachine = $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH);
         $stateMachine->apply(OrderPaymentTransitions::TRANSITION_PAY);
 
-        $klarnaPayment = $this->getKlarnaPayment($order);
+        $retriever = new KlarnaPaymentRetriever();
+        $klarnaPayment = $retriever->retrieveFromOrder($order);
         if (null === $klarnaPayment) {
             return;
         }
@@ -183,7 +185,8 @@ class ActivatePayment implements ActivatePaymentInterface
      */
     private function confirmCaptured(OrderInterface $order): int
     {
-        $klarnaPayment = $this->getKlarnaPayment($order);
+        $retriever = new KlarnaPaymentRetriever();
+        $klarnaPayment = $retriever->retrieveFromOrder($order);
 
         assert($klarnaPayment instanceof PaymentInterface);
 
@@ -230,27 +233,5 @@ class ActivatePayment implements ActivatePaymentInterface
         }
 
         return StatusDO::PAYMENT_ALREADY_CAPTURED;
-    }
-
-    protected function getKlarnaPayment(OrderInterface $order): ?PaymentInterface
-    {
-        /** @var ?PaymentInterface $klarnaPayment */
-        $klarnaPayment = null;
-
-        $payments = $order->getPayments();
-
-        /** @var PaymentInterface $payment */
-        foreach ($payments as $payment) {
-            $method = $payment->getMethod();
-            assert($method instanceof PaymentMethodInterface);
-
-            if ($this->supportsPaymentMethod($method)) {
-                $klarnaPayment = $payment;
-
-                break;
-            }
-        }
-
-        return $klarnaPayment;
     }
 }

@@ -11,6 +11,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\Customer;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -186,6 +187,18 @@ class OrderVerifier implements OrderVerifierInterface
                 $this->updateAddress($shippingAddressData, $shippingAddress);
             }
         }
+
+        /** @var ?array $klarnaCustomerData */
+        $klarnaCustomerData = $data['customer'] ?? null;
+
+        if ($klarnaCustomerData !== null && count($klarnaCustomerData) > 0) {
+            $paymentRetriever = new KlarnaPaymentRetriever();
+            $payment = $paymentRetriever->retrieveFromOrder($order);
+
+            if ($payment !== null) {
+                $this->addPaymentDetails($payment, 'customer', $klarnaCustomerData);
+            }
+        }
     }
 
     /**
@@ -210,5 +223,14 @@ class OrderVerifier implements OrderVerifierInterface
         $address = $dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
+    }
+
+    private function addPaymentDetails(PaymentInterface $payment, string $detailsKey, ?array $klarnaCustomerData): void
+    {
+        $details = $payment->getDetails();
+
+        $details[$detailsKey] = $klarnaCustomerData;
+
+        $payment->setDetails($details);
     }
 }
