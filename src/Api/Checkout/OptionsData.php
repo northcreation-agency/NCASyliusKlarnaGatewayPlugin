@@ -17,7 +17,7 @@ class OptionsData
         $options = [];
 
         if (count($this->b2bSettings) > 0) {
-            $options = array_merge($this->handleB2Bsettings($options, $this->b2bSettings));
+            $options = $this->handleB2Bsettings($options, $this->b2bSettings);
         }
 
         return $options;
