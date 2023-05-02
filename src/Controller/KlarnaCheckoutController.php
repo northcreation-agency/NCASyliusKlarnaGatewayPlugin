@@ -9,8 +9,8 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
@@ -48,17 +48,17 @@ class KlarnaCheckoutController extends AbstractController
     public const WIDGET_SNIPPET_KEY = 'html_snippet';
 
     public function __construct(
-        private OrderRepositoryInterface              $orderRepository,
+        private OrderRepositoryInterface $orderRepository,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
-        private TaxRateResolverInterface              $taxRateResolver,
-        private OrderProcessorInterface               $shippingChargesProcessor,
-        private Payum                                 $payum,
-        private ParameterBagInterface                 $parameterBag,
-        private ClientInterface                       $client,
-        private FactoryInterface                      $stateMachineFactory,
-        private EntityManagerInterface                $entityManager,
-        private OrderNumberAssignerInterface          $orderNumberAssigner,
-        private PayloadDataResolverInterface          $payloadDataResolver,
+        private TaxRateResolverInterface $taxRateResolver,
+        private OrderProcessorInterface $shippingChargesProcessor,
+        private Payum $payum,
+        private ParameterBagInterface $parameterBag,
+        private ClientInterface $client,
+        private FactoryInterface $stateMachineFactory,
+        private EntityManagerInterface $entityManager,
+        private OrderNumberAssignerInterface $orderNumberAssigner,
+        private PayloadDataResolverInterface $payloadDataResolver,
     ) {
     }
 
@@ -109,6 +109,7 @@ class KlarnaCheckoutController extends AbstractController
 
         $customerParams = [];
         if ($request !== null) {
+            /** @var array<string, string> $customerParams */
             $customerParams = $request->query->all();
         }
 
@@ -121,7 +122,7 @@ class KlarnaCheckoutController extends AbstractController
             entityManager: $this->entityManager,
             merchantData: $merchantData,
             optionsData: $optionsData,
-            customerData: $this->payloadDataResolver->getCustomerData($customerParams)
+            customerData: $this->payloadDataResolver->getCustomerData($customerParams),
         );
 
         $requestData = $klarnaRequestStructure->toArray();

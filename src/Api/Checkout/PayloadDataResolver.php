@@ -18,11 +18,11 @@ use Webmozart\Assert\Assert;
 
 class PayloadDataResolver implements PayloadDataResolverInterface
 {
-
     public function __construct(
         private ContainerInterface $container,
-        private ParameterBagInterface $parameterBag
-    ){}
+        private ParameterBagInterface $parameterBag,
+    ) {
+    }
 
     /**
      * @throws ContainerExceptionInterface
@@ -88,25 +88,19 @@ class PayloadDataResolver implements PayloadDataResolverInterface
         $method = $payment->getMethod();
         Assert::isInstanceOf($method, PaymentMethodInterface::class);
 
-        /** @var array $b2bSettings */
+        /** @var array<string, string> $b2bSettings */
         $b2bSettings = $method->getGatewayConfig()?->getConfig()['b2bSettings'] ?? [];
 
-
         return new OptionsData(
-            b2bSettings: $b2bSettings
+            b2bSettings: $b2bSettings,
         );
     }
 
-    /**
-     * @param string $route
-     * @param array $parameters
-     * @param int $referenceType
-     * @return string
-     */
     protected function generateUrl(string $route, array $parameters = [], int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): string
     {
         /** @var RouterInterface $router */
         $router = $this->container->get('router');
+
         return $router->generate($route, $parameters, $referenceType);
     }
 
@@ -137,6 +131,9 @@ class PayloadDataResolver implements PayloadDataResolverInterface
         return $pushUrl;
     }
 
+    /**
+     * @param array<string, string> $customerData
+     */
     public function getCustomerData(array $customerData): CustomerData
     {
         return new CustomerData(
@@ -144,7 +141,7 @@ class PayloadDataResolver implements PayloadDataResolverInterface
             organizationRegistrationId: $customerData['organizationRegistrationId'] ?? null,
             vatId: $customerData['vatId'] ?? null,
             gender: $customerData['gender'] ?? null,
-            dateOfBirth: $customerData['dateOfBirth'] ?? null
+            dateOfBirth: $customerData['dateOfBirth'] ?? null,
         );
     }
 }

@@ -11,13 +11,14 @@ class CustomerData
         private ?string $organizationRegistrationId = null,
         private ?string $vatId = null,
         private ?string $gender = null,
-        private ?string $dateOfBirth = null
-    ){}
+        private ?string $dateOfBirth = null,
+    ) {
+    }
 
     public function toArray(): array
     {
         $customerData = [
-            'type' => $this->type
+            'type' => $this->type,
         ];
 
         if ($this->organizationRegistrationId !== null) {

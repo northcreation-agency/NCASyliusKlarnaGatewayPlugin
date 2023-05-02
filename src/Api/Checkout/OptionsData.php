@@ -7,8 +7,10 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 class OptionsData
 {
     public function __construct(
-        private array $b2bSettings = []
-    ){}
+        /** @var array<string, string> $b2bSettings */
+        private array $b2bSettings = [],
+    ) {
+    }
 
     public function toArray(): array
     {
@@ -21,12 +23,17 @@ class OptionsData
         return $options;
     }
 
+    /**
+     * @param array<string, string> $options
+     * @param array<string, string> $b2bSettings
+     */
     protected function handleB2Bsettings(array $options, array $b2bSettings): array
     {
         $supportB2B = $b2bSettings['supportB2B'] ?? false;
-        if ($supportB2B) {
+        if ($supportB2B !== false) {
             $options['allowed_customer_types'] = ['person', 'organization'];
         }
+
         return $options;
     }
 }

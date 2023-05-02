@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Psr\Container\ContainerExceptionInterface;
@@ -16,5 +18,8 @@ interface PayloadDataResolverInterface
 
     public function getOptionsData(PaymentInterface $payment): OptionsData;
 
+    /**
+     * @param array<string, string> $customerData
+     */
     public function getCustomerData(array $customerData): CustomerData;
 }
