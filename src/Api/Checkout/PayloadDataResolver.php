@@ -53,8 +53,11 @@ class PayloadDataResolver implements PayloadDataResolverInterface
         /** @var string|null $checkoutUrl */
         $checkoutUrl = $merchantData['checkoutUrl'] ?? null;
 
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
         /** @var bool $headlessMode */
-        $headlessMode = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.read_order') ?? false;
+        $headlessMode = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.headless') ?? false;
+
+        assert(is_bool($headlessMode));
 
         /** @var string|null $confirmationHeadfullUrl */
         $confirmationHeadfullUrl = $this->generateUrl(

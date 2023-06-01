@@ -11,6 +11,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\Customer;
@@ -28,6 +29,7 @@ class OrderVerifier implements OrderVerifierInterface
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
+        private OrderManagementInterface $orderManagement,
     ) {
     }
 
@@ -77,7 +79,7 @@ class OrderVerifier implements OrderVerifierInterface
 
     public function update(OrderInterface $order): void
     {
-        $klarnaData = $this->fetchOrderDataFromKlarna($order);
+        $klarnaData = $this->orderManagement->fetchOrderDataFromKlarna($order);
 
         try {
             $this->updateFromKlarna($klarnaData, $order);
@@ -85,53 +87,6 @@ class OrderVerifier implements OrderVerifierInterface
         }
 
         $this->entityManager->flush();
-    }
-
-    private function fetchOrderDataFromKlarna(OrderInterface $order): array
-    {
-        $payment = $order->getPayments()->first();
-
-        assert($payment instanceof PaymentInterface);
-
-        $paymentDetails = $payment->getDetails();
-
-        /** @var ?string $klarnaOrderId */
-        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
-        assert($klarnaOrderId !== null);
-
-        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1) */
-        $readOrderUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
-        );
-        assert(is_string($readOrderUrlTemplate));
-
-        $readOrderUrl = $this->replacePlaceholder('' . $klarnaOrderId, $readOrderUrlTemplate);
-
-        /** @var PaymentInterface $payment */
-        $payment = $order->getPayments()->first();
-
-        /** @var ?PaymentMethodInterface $method */
-        $method = $payment->getMethod();
-        assert($method !== null);
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
-
-        $response = $this->client->request(
-            'GET',
-            $readOrderUrl,
-            [
-                'headers' => [
-                    'Authorization' => $basicAuthString,
-                    'Content-Type' => 'application/json',
-                ],
-            ],
-        );
-
-        $dataContents = $response->getBody()->getContents();
-
-        /** @var array $data */
-        $data = json_decode($dataContents, true);
-
-        return $data;
     }
 
     public function replacePlaceholder(string $replacement, string $string): string

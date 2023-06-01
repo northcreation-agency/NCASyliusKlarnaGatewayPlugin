@@ -55,6 +55,15 @@ services:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\RefundAction
         public: true
     
+    north_creation_agency_sylius_klarna_gateway.api.order_management:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagement
+        public: true
+        arguments: [
+            '@parameter_bag',
+            '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever',
+            '@sylius.http_client',
+        ]
+
     north_creation_agency_sylius_klarna_gateway.api.order_verifier:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifier
         public: true
@@ -63,6 +72,7 @@ services:
             '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever',
             '@parameter_bag',
             '@sylius.http_client',
+            '@north_creation_agency_sylius_klarna_gateway.api.order_management'
         ]
 
     north_creation_agency_sylius_klarna_gateway.cypher:
@@ -76,6 +86,11 @@ services:
         arguments: [
             '@north_creation_agency_sylius_klarna_gateway.cypher'
         ]
+        
+    NorthCreationAgency\SyliusKlarnaGatewayPlugin\Event\GuardedCompleteOrderHandlerDecorator:
+        decorates: Sylius\Bundle\ApiBundle\CommandHandler\Checkout\CompleteOrderHandler
+        arguments:
+            - '@.inner'
     
     north_creation_agency_sylius_klarna_gateway.state_machine.cancel_payment:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\CancelPayment

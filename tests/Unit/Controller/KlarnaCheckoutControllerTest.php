@@ -8,18 +8,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolver;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController;
 use Payum\Core\Payum;
 use SM\Factory\FactoryInterface;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
-use Sylius\Component\Core\Model\Order;
-use Sylius\Component\Core\Model\Payment;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
-use Sylius\Component\Taxation\Calculator\CalculatorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 class KlarnaCheckoutControllerTest extends \PHPUnit\Framework\TestCase
 {
@@ -44,7 +41,8 @@ class KlarnaCheckoutControllerTest extends \PHPUnit\Framework\TestCase
                     $order->setNumber(str_pad((string)$order->getId(), 9, '0' ));
                 }
             }),
-            payloadDataResolver: self::createMock(PayloadDataResolver::class)
+            payloadDataResolver: self::createMock(PayloadDataResolver::class),
+            orderManagement: self::createMock(OrderManagementInterface::class)
         );
     }
 
