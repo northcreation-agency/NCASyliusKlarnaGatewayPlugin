@@ -107,17 +107,18 @@ class KlarnaCheckoutController extends AbstractController
         /** @var string $klarnaUri */
         $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
         $klarnaOrderId = $this->getKlarnaReference($payment);
+        $replaceReference = false;
         if ($klarnaOrderId !== null) {
             $klarnaOrderData = $this->orderManagement->fetchOrderDataFromKlarnaWithPayment($payment);
             $shouldCreateNewCheckout = $this->orderManagement->canCreateNewCheckoutOrder($klarnaOrderData);
             if (!$shouldCreateNewCheckout) {
                 $klarnaUri .= '/' . $klarnaOrderId;
+            } else {
+                $replaceReference = true;
             }
         }
 
         $optionsData = $this->payloadDataResolver->getOptionsData($payment);
-
-        //TODO: send a cancel request on complete exception
 
         $customerParams = [];
         if ($request !== null) {
@@ -162,7 +163,7 @@ class KlarnaCheckoutController extends AbstractController
             /** @var string|null $klarnaOrderId */
             $klarnaOrderId = $contents['order_id'] ?? null;
             if (is_string($klarnaOrderId)) {
-                $this->addKlarnaReference($payment, $klarnaOrderId);
+                $this->addKlarnaReference($payment, $klarnaOrderId, $replaceReference);
             }
 
             /** @var string $snippet */
@@ -557,11 +558,11 @@ class KlarnaCheckoutController extends AbstractController
         return $payment !== false ? $payment : null;
     }
 
-    private function addKlarnaReference(PaymentInterface $payment, string $reference): void
+    private function addKlarnaReference(PaymentInterface $payment, string $reference, bool $replaceReference = false): void
     {
         $details = $payment->getDetails();
 
-        if (!array_key_exists('klarna_order_id', $details)) {
+        if (!array_key_exists('klarna_order_id', $details) || $replaceReference) {
             $details['klarna_order_id'] = $reference;
         }
 

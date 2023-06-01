@@ -86,6 +86,11 @@ services:
         arguments: [
             '@north_creation_agency_sylius_klarna_gateway.cypher'
         ]
+        
+    NorthCreationAgency\SyliusKlarnaGatewayPlugin\Event\GuardedCompleteOrderHandlerDecorator:
+        decorates: Sylius\Bundle\ApiBundle\CommandHandler\Checkout\CompleteOrderHandler
+        arguments:
+            - '@.inner'
     
     north_creation_agency_sylius_klarna_gateway.state_machine.cancel_payment:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\CancelPayment
@@ -104,6 +109,10 @@ services:
             '@north_creation_agency_sylius_klarna_gateway.api.order_verifier',
             '@parameter_bag'
         ]
+
+    north_creation_agency_sylius_klarna_gateway.state_machine.exception_thrower:    
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\ExceptionThrower
+        public: true
 
     GuzzleHttp\ClientInterface: '@sylius.http_client'    
     NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface: '@north_creation_agency_sylius_klarna_gateway.basic_authentication_retriever'
