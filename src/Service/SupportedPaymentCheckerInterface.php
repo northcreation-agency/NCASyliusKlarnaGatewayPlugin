@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Service;
 
 use Sylius\Component\Core\Model\PaymentMethodInterface;

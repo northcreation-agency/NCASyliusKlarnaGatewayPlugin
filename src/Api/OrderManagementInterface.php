@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
@@ -25,5 +27,4 @@ interface OrderManagementInterface
     public function isCancelled(array $data): bool;
 
     public function canCreateNewCheckoutOrder(array $data): bool;
-
 }

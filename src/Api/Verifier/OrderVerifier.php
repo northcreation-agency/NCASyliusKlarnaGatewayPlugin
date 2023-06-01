@@ -29,7 +29,7 @@ class OrderVerifier implements OrderVerifierInterface
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
-        private OrderManagementInterface $orderManagement
+        private OrderManagementInterface $orderManagement,
     ) {
     }
 

@@ -15,7 +15,6 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifierInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
@@ -61,7 +60,7 @@ class KlarnaCheckoutController extends AbstractController
         private EntityManagerInterface $entityManager,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private PayloadDataResolverInterface $payloadDataResolver,
-        private OrderManagementInterface $orderManagement
+        private OrderManagementInterface $orderManagement,
     ) {
     }
 
@@ -715,22 +714,5 @@ class KlarnaCheckoutController extends AbstractController
         $address = $dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
-    }
-
-    /**
-     * @throws ApiException
-     */
-    private function checkCancelledOrder(PaymentInterface $payment): bool
-    {
-        $data = $this->fetchOrderData($payment);
-        return $this->orderManagement->isCancelled($data);
-    }
-
-    /**
-     * @throws ApiException
-     */
-    private function fetchOrderData(PaymentInterface $payment): array
-    {
-        return $this->orderManagement->fetchOrderDataFromKlarnaWithPayment($payment);
     }
 }

@@ -12,6 +12,8 @@ use SM\SMException;
 use Sylius\Bundle\ApiBundle\Command\Checkout\CompleteOrder;
 use Sylius\Bundle\ApiBundle\CommandHandler\Checkout\CompleteOrderHandler;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\PaymentInterface;
+use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
@@ -21,8 +23,9 @@ class GuardedCompleteOrderHandlerDecorator implements MessageHandlerInterface
         private CompleteOrderHandler $completeOrderHandler,
         private OrderRepositoryInterface $orderRepository,
         private CancelPaymentInterface $cancelPayment,
-        private SupportedPaymentCheckerInterface $supportedPaymentChecker
-    ){}
+        private SupportedPaymentCheckerInterface $supportedPaymentChecker,
+    ) {
+    }
 
     /**
      * @throws ApiException
@@ -35,6 +38,7 @@ class GuardedCompleteOrderHandlerDecorator implements MessageHandlerInterface
             $order = $this->completeOrderHandler->__invoke($completeOrder);
         } catch (SMException $exception) {
             $this->cancelKlarnaOrderOnCompleteException($completeOrder);
+
             throw $exception;
         }
 
@@ -56,8 +60,12 @@ class GuardedCompleteOrderHandlerDecorator implements MessageHandlerInterface
 
         $payments = $cart->getPayments();
         foreach ($payments as $payment) {
+            if (!$payment instanceof PaymentInterface) {
+                continue;
+            }
+
             $method = $payment->getMethod();
-            if ($method === null) {
+            if (!$method instanceof PaymentMethodInterface) {
                 continue;
             }
 
@@ -65,6 +73,5 @@ class GuardedCompleteOrderHandlerDecorator implements MessageHandlerInterface
                 $this->cancelPayment->cancel($payment);
             }
         }
-
     }
 }

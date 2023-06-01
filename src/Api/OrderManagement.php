@@ -16,8 +16,9 @@ class OrderManagement implements OrderManagementInterface
     public function __construct(
         private ParameterBagInterface $parameterBag,
         private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
-        private ClientInterface $client
-    ){}
+        private ClientInterface $client,
+    ) {
+    }
 
     public function fetchOrderDataFromKlarna(OrderInterface $order): array
     {
@@ -30,7 +31,6 @@ class OrderManagement implements OrderManagementInterface
 
     public function fetchOrderDataFromKlarnaWithPayment(PaymentInterface $payment): array
     {
-
         $paymentDetails = $payment->getDetails();
 
         /** @var ?string $klarnaOrderId */
@@ -88,7 +88,10 @@ class OrderManagement implements OrderManagementInterface
      */
     public function canCreateNewCheckoutOrder(array $data): bool
     {
+        /** @var array $captures */
         $captures = $data['captures'] ?? [];
+
+        /** @var array $refunds */
         $refunds = $data['refunds'] ?? [];
 
         $hasTransactions = count($captures) > 0 || count($refunds) > 0;
