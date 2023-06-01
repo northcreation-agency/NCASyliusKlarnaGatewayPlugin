@@ -15,9 +15,10 @@ use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
-use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-class GuardedCompleteOrderHandlerDecorator implements MessageHandlerInterface
+#[AsMessageHandler]
+class GuardedCompleteOrderHandlerDecorator
 {
     public function __construct(
         private CompleteOrderHandler $completeOrderHandler,
