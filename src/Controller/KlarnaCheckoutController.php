@@ -14,6 +14,8 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolv
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier\OrderVerifierInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
@@ -59,6 +61,7 @@ class KlarnaCheckoutController extends AbstractController
         private EntityManagerInterface $entityManager,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private PayloadDataResolverInterface $payloadDataResolver,
+        private OrderManagementInterface $orderManagement
     ) {
     }
 
@@ -75,7 +78,10 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Order not found'], 404);
         }
 
-        if ($order->getPaymentState() === OrderPaymentStates::STATE_PAID) {
+        if (
+            $order->getPaymentState() === OrderPaymentStates::STATE_PAID ||
+            $order->getPaymentState() === OrderPaymentStates::STATE_AUTHORIZED
+        ) {
             return new JsonResponse(['error' => 'Payment already processed'], Response::HTTP_GONE);
         }
 
@@ -102,10 +108,16 @@ class KlarnaCheckoutController extends AbstractController
         $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
         $klarnaOrderId = $this->getKlarnaReference($payment);
         if ($klarnaOrderId !== null) {
-            $klarnaUri .= '/' . $klarnaOrderId;
+            $klarnaOrderData = $this->orderManagement->fetchOrderDataFromKlarnaWithPayment($payment);
+            $shouldCreateNewCheckout = $this->orderManagement->canCreateNewCheckoutOrder($klarnaOrderData);
+            if (!$shouldCreateNewCheckout) {
+                $klarnaUri .= '/' . $klarnaOrderId;
+            }
         }
 
         $optionsData = $this->payloadDataResolver->getOptionsData($payment);
+
+        //TODO: send a cancel request on complete exception
 
         $customerParams = [];
         if ($request !== null) {
@@ -702,5 +714,22 @@ class KlarnaCheckoutController extends AbstractController
         $address = $dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
+    }
+
+    /**
+     * @throws ApiException
+     */
+    private function checkCancelledOrder(PaymentInterface $payment): bool
+    {
+        $data = $this->fetchOrderData($payment);
+        return $this->orderManagement->isCancelled($data);
+    }
+
+    /**
+     * @throws ApiException
+     */
+    private function fetchOrderData(PaymentInterface $payment): array
+    {
+        return $this->orderManagement->fetchOrderDataFromKlarnaWithPayment($payment);
     }
 }

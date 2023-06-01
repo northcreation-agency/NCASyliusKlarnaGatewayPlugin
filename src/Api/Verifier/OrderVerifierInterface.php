@@ -6,6 +6,7 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Verifier;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\PaymentInterface;
 
 interface OrderVerifierInterface
 {
