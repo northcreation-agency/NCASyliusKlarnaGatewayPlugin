@@ -7,7 +7,6 @@ namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
@@ -94,27 +93,12 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Payment method not found'], 404);
         }
 
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
         $merchantData = $this->payloadDataResolver->getMerchantData($payment);
 
         if (null === $merchantData) {
             return new JsonResponse([
                 'error' => 'Merchant data not found',
             ], 404);
-        }
-
-        /** @var string $klarnaUri */
-        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
-        $klarnaOrderId = $this->getKlarnaReference($payment);
-        $replaceReference = false;
-        if ($klarnaOrderId !== null) {
-            $klarnaOrderData = $this->orderManagement->fetchOrderDataFromKlarnaWithPayment($payment);
-            $shouldCreateNewCheckout = $this->orderManagement->canCreateNewCheckoutOrder($klarnaOrderData);
-            if (!$shouldCreateNewCheckout) {
-                $klarnaUri .= '/' . $klarnaOrderId;
-            } else {
-                $replaceReference = true;
-            }
         }
 
         $optionsData = $this->payloadDataResolver->getOptionsData($payment);
@@ -144,42 +128,10 @@ class KlarnaCheckoutController extends AbstractController
         $requestStatus = 200;
 
         try {
-            $response = $this->client->request(
-                'POST',
-                $klarnaUri,
-                [
-                    'headers' => [
-                        'Authorization' => $basicAuthString,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'body' => json_encode($requestData),
-                ],
-            );
-
-            $contents = json_decode($response->getBody()->getContents(), true);
-            assert(is_array($contents));
-
-            /** @var string|null $klarnaOrderId */
-            $klarnaOrderId = $contents['order_id'] ?? null;
-            if (is_string($klarnaOrderId)) {
-                $this->addKlarnaReference($payment, $klarnaOrderId, $replaceReference);
-            }
-
-            /** @var string $snippet */
-            $snippet = $contents[self::WIDGET_SNIPPET_KEY] ?? throw new \Exception(
-                'Expected to find key ' . self::WIDGET_SNIPPET_KEY . ' but none were found in response.',
-                500,
-            );
-        } catch (RequestException $e) {
-            $response = $e->getResponse();
-            $requestStatus = $response !== null ? $response->getStatusCode() : 403;
-            $errorMessage =
-                $response !== null ?
-                $response->getBody()->getContents() : 'Something went wrong with request.'
-            ;
-        } catch (GuzzleException $e) {
-            $requestStatus = 500;
-            $errorMessage = $e->getMessage();
+            $snippet = $this->orderManagement->fetchCheckoutWidget($requestData, $payment);
+        } catch (ApiException $exception) {
+            $errorMessage = $exception->getMessage();
+            $requestStatus = $exception->getCode();
         }
 
         if (strlen($errorMessage) > 0) {
@@ -189,6 +141,7 @@ class KlarnaCheckoutController extends AbstractController
             );
         }
 
+        $klarnaOrderId = $this->orderManagement->getKlarnaReference($payment);
         if (is_string($klarnaOrderId)) {
             $this->entityManager->persist($payment);
             $this->entityManager->flush();
@@ -555,31 +508,6 @@ class KlarnaCheckoutController extends AbstractController
         $payment = $order->getPayments()->first();
 
         return $payment !== false ? $payment : null;
-    }
-
-    private function addKlarnaReference(PaymentInterface $payment, string $reference, bool $replaceReference = false): void
-    {
-        $details = $payment->getDetails();
-
-        if (!array_key_exists('klarna_order_id', $details) || $replaceReference) {
-            $details['klarna_order_id'] = $reference;
-        }
-
-        $payment->setDetails($details);
-    }
-
-    private function getKlarnaReference(PaymentInterface $payment): ?string
-    {
-        $details = $payment->getDetails();
-
-        if (!array_key_exists('klarna_order_id', $details)) {
-            return null;
-        }
-
-        /** @var string $klarnaOrderId */
-        $klarnaOrderId = $details['klarna_order_id'];
-
-        return $klarnaOrderId;
     }
 
     public function replacePlaceholder(string $replacement, string $string): string

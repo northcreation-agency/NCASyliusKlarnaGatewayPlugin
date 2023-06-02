@@ -27,4 +27,8 @@ interface OrderManagementInterface
     public function isCancelled(array $data): bool;
 
     public function canCreateNewCheckoutOrder(array $data): bool;
+
+    public function fetchCheckoutWidget(array $requestData, PaymentInterface &$payment): string;
+
+    public function getKlarnaReference(PaymentInterface $payment): ?string;
 }
