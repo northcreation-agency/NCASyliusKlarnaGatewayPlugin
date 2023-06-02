@@ -24,6 +24,8 @@ interface OrderManagementInterface
 
     public function getStatus(array $data): string;
 
+    public function fetchCheckoutOrderData(string $orderId, string $basicAuthString): array;
+
     public function isCancelled(array $data): bool;
 
     public function canCreateNewCheckoutOrder(array $data): bool;

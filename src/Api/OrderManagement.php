@@ -64,9 +64,16 @@ class OrderManagement implements OrderManagementInterface
 
             if ($shouldGetCheckout) {
                 try {
-                    $snippet = $this->getCheckoutWidget($klarnaOrderId, $basicAuthString);
+                    $orderData = $this->fetchCheckoutOrderData($klarnaOrderId, $basicAuthString);
 
-                    return $snippet;
+                    if (!$this->hasDiff($requestData, $orderData)) {
+                        $snippet = $this->getCheckoutWidget($klarnaOrderId, $basicAuthString);
+
+                        return $snippet;
+                    } else {
+                        $klarnaUri .= '/' . $klarnaOrderId;
+                    }
+
                 } catch (RequestException $exception) {
                     $response = $exception->getResponse();
                     if ($response !== null && $response->getStatusCode() !== 404) {
@@ -120,6 +127,39 @@ class OrderManagement implements OrderManagementInterface
         }
 
         return $snippet;
+    }
+
+    public function fetchCheckoutOrderData(string $orderId, string $basicAuthString): array
+    {
+        /** @var string $klarnaUri */
+        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
+        $klarnaUri = str_ends_with($klarnaUri, '/') ? $klarnaUri . $orderId : $klarnaUri . '/' . $orderId;
+
+        try {
+            $response = $this->client->request(
+                'GET',
+                $klarnaUri,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                ],
+            );
+
+            $contents = json_decode($response->getBody()->getContents(), true);
+            assert(is_array($contents));
+
+            $data = $contents;
+
+        } catch (GuzzleException $e) {
+            $requestStatus = 500;
+            $errorMessage = $e->getMessage();
+
+            throw new ApiException($errorMessage, $requestStatus);
+        }
+
+        return $data;
     }
 
     /**
@@ -264,5 +304,10 @@ class OrderManagement implements OrderManagementInterface
         }
 
         $payment->setDetails($details);
+    }
+
+    private function hasDiff(array $requestData, array $klarnaData): bool
+    {
+        return $requestData['order_amount'] !== $klarnaData['order_amount'];
     }
 }
