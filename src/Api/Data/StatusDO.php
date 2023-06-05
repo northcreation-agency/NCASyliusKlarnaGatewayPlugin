@@ -16,6 +16,8 @@ class StatusDO
 
     public const ERROR_CODE_CAPTURE_NOT_ALLOWED = 'CAPTURE_NOT_ALLOWED';
 
+    public const ERROR_CODE_REFUND_NOT_ALLOWED = 'REFUND_NOT_ALLOWED';
+
     public const PAYMENT_ALREADY_CAPTURED = Response::HTTP_ACCEPTED;
 
     public function __construct(

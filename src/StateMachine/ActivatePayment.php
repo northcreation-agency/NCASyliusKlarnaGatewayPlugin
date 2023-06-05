@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine;
 
 use Doctrine\ORM\EntityManagerInterface;
-use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
 use Payum\Core\Model\GatewayConfigInterface;
 use SM\Factory\Factory;
@@ -25,19 +24,17 @@ use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Payment\PaymentTransitions;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 class ActivatePayment implements ActivatePaymentInterface
 {
     public function __construct(
-        private ClientInterface $client,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
         private ParameterBagInterface $parameterBag,
-        private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private EntityManagerInterface $entityManager,
         private Factory $stateMachineFactory,
+        private OrderManagementInterface $orderManagement,
     ) {
     }
 
@@ -59,6 +56,7 @@ class ActivatePayment implements ActivatePaymentInterface
         }
 
         $statusCode = $this->sendCaptureRequest($payment);
+
         if ($statusCode === StatusDO::PAYMENT_CAPTURED) {
             $this->handlePaidOrder($order);
         }
@@ -71,31 +69,15 @@ class ActivatePayment implements ActivatePaymentInterface
     /**
      * @throws ApiException
      * @throws GuzzleException
+     * @throws \Exception
      */
     public function sendCaptureRequest(SyliusPaymentInterface $payment): int
     {
         $paymentMethod = $payment->getMethod();
         assert($paymentMethod instanceof PaymentMethodInterface);
 
-        $paymentDetails = $payment->getDetails();
-
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
-
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
-
-        /** @var ?string $klarnaOrderId */
-        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
-        assert($klarnaOrderId !== null);
-
-        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
-         * @var string $orderManagementUrlTemplate
-         */
-        $orderManagementUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
-        );
-
-        $captureUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate) . '/captures';
 
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
@@ -109,33 +91,7 @@ class ActivatePayment implements ActivatePaymentInterface
 
         $payload = $klarnaRequestStructure->toArray();
 
-        try {
-            $response = $this->client->request(
-                'POST',
-                $captureUrl,
-                [
-                    'headers' => [
-                        'Authorization' => $basicAuthString,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'body' => json_encode($payload),
-                ],
-            );
-
-            $status = $response->getStatusCode();
-        } catch (GuzzleException $e) {
-            if (str_contains($e->getMessage(), StatusDO::ERROR_CODE_CAPTURE_NOT_ALLOWED)) {
-                $status = $this->confirmCaptured($order);
-            } else {
-                throw new ApiException('Activation of Klarna payment was not successful: ' . $e->getMessage());
-            }
-        }
-
-        if ($status !== Response::HTTP_CREATED && $status !== Response::HTTP_ACCEPTED) {
-            throw new ApiException('Activation of Klarna payment was not successful');
-        }
-
-        return $status;
+        return $this->orderManagement->sendCaptureRequest($payment, $payload);
     }
 
     public function replacePlaceholder(string $replacement, string $string): string
@@ -177,61 +133,5 @@ class ActivatePayment implements ActivatePaymentInterface
 
         $stateMachine = $this->stateMachineFactory->get($klarnaPayment, PaymentTransitions::GRAPH);
         $stateMachine->apply(PaymentTransitions::TRANSITION_COMPLETE);
-    }
-
-    /**
-     * @throws ApiException
-     * @throws GuzzleException
-     */
-    private function confirmCaptured(OrderInterface $order): int
-    {
-        $retriever = new KlarnaPaymentRetriever();
-        $klarnaPayment = $retriever->retrieveFromOrder($order);
-
-        assert($klarnaPayment instanceof PaymentInterface);
-
-        $paymentDetails = $klarnaPayment->getDetails();
-
-        /** @var ?string $klarnaOrderId */
-        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
-        assert($klarnaOrderId !== null);
-
-        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
-         * @var string $orderManagementUrlTemplate
-         */
-        $orderManagementUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
-        );
-
-        $getOrderUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate);
-
-        $paymentMethod = $klarnaPayment->getMethod();
-
-        assert($paymentMethod instanceof PaymentMethodInterface);
-
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
-
-        $response = $this->client->request(
-            'GET',
-            $getOrderUrl,
-            [
-                'headers' => [
-                    'Authorization' => $basicAuthString,
-                    'Content-Type' => 'application/json',
-                ],
-            ],
-        );
-
-        /** @var array $data */
-        $data = json_decode($response->getBody()->getContents(), true);
-
-        /** @var string $orderStatus */
-        $orderStatus = $data['status'] ?? 'Not set';
-
-        if ($orderStatus !== StatusDO::STATUS_CAPTURED) {
-            throw new ApiException('Could not capture order. Current status: ' . $orderStatus);
-        }
-
-        return StatusDO::PAYMENT_ALREADY_CAPTURED;
     }
 }

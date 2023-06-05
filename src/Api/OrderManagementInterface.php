@@ -22,15 +22,19 @@ interface OrderManagementInterface
      */
     public function fetchOrderDataFromKlarna(OrderInterface $order): array;
 
-    public function getStatus(array $data): string;
-
     public function fetchCheckoutOrderData(string $orderId, string $basicAuthString): array;
+
+    public function fetchCheckoutWidget(array $requestData, PaymentInterface &$payment): string;
+
+    public function sendCaptureRequest(PaymentInterface $payment, array $payload): int;
+
+    public function sendRefundRequest(PaymentInterface $payment, array $payload): void;
+
+    public function getStatus(array $data): string;
 
     public function isCancelled(array $data): bool;
 
     public function canCreateNewCheckoutOrder(array $data): bool;
-
-    public function fetchCheckoutWidget(array $requestData, PaymentInterface &$payment): string;
 
     public function getKlarnaReference(PaymentInterface $payment): ?string;
 }

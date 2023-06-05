@@ -9,7 +9,9 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\AlreadyRefundedException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\ValueObject\KlarnaApi;
 use Payum\Core\Action\ActionInterface;
 use Payum\Core\ApiAwareInterface;
@@ -31,13 +33,12 @@ class RefundAction implements ActionInterface, ApiAwareInterface
     private ?KlarnaApi $api;
 
     public function __construct(
-        private ClientInterface $client,
         private TaxRateResolverInterface $taxRateResolver,
         private OrderProcessorInterface $shippingChargesProcessor,
         private ParameterBagInterface $parameterBag,
-        private BasicAuthenticationRetrieverInterface $basicAuthenticationRetriever,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private EntityManagerInterface $entityManager,
+        private OrderManagementInterface $orderManagement
     ) {
         $this->api = null;
     }
@@ -54,7 +55,11 @@ class RefundAction implements ActionInterface, ApiAwareInterface
             return;
         }
 
-        $this->sendRefundRequest($payment);
+        try {
+            $this->sendRefundRequest($payment);
+        } catch (AlreadyRefundedException $exception) {
+            // Already Refunded is allowed
+        }
     }
 
     /**
@@ -79,28 +84,8 @@ class RefundAction implements ActionInterface, ApiAwareInterface
      */
     public function sendRefundRequest(SyliusPaymentInterface $payment): void
     {
-        $paymentDetails = $payment->getDetails();
-
         $order = $payment->getOrder();
         assert($order instanceof OrderInterface);
-
-        $paymentMethod = $payment->getMethod();
-
-        assert($paymentMethod instanceof PaymentMethodInterface);
-        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
-
-        /** @var ?string $klarnaOrderId */
-        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
-        assert($klarnaOrderId !== null);
-
-        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
-         * @var string $orderManagementUrlTemplate
-         */
-        $orderManagementUrlTemplate = $this->parameterBag->get(
-            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
-        );
-
-        $refundUrl = $this->replacePlaceholder($klarnaOrderId, $orderManagementUrlTemplate) . '/refunds';
 
         $klarnaRequestStructure = new KlarnaRequestStructure(
             order: $order,
@@ -114,22 +99,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
 
         $payload = $klarnaRequestStructure->toArray();
 
-        $response = $this->client->request(
-            'POST',
-            $refundUrl,
-            [
-                'headers' => [
-                    'Authorization' => $basicAuthString,
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => json_encode($payload),
-            ],
-        );
-
-        $status = $response->getStatusCode();
-        if ($status !== Response::HTTP_CREATED) {
-            throw new ApiException('Refund was not created with Klarna');
-        }
+        $this->orderManagement->sendRefundRequest($payment, $payload);
     }
 
     public function supports($request): bool
