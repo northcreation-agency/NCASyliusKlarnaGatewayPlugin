@@ -8,11 +8,16 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\AlreadyCancelledException;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\AlreadyRefundedException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
+use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class OrderManagement implements OrderManagementInterface
 {
@@ -251,6 +256,145 @@ class OrderManagement implements OrderManagementInterface
         return $data;
     }
 
+    /**
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function sendCaptureRequest(SyliusPaymentInterface $payment, array $payload): int
+    {
+        $paymentMethod = $payment->getMethod();
+        assert($paymentMethod instanceof PaymentMethodInterface);
+
+        $paymentDetails = $payment->getDetails();
+
+        $order = $payment->getOrder();
+        assert($order instanceof OrderInterface);
+
+        $basicAuthString = $this->getBasicAuth($paymentMethod);
+
+        /** @var ?string $klarnaOrderId */
+        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+        assert($klarnaOrderId !== null);
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         * @var string $orderManagementUrlTemplate
+         */
+        $orderManagementUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
+        );
+
+        $captureUrl = str_replace('{order_id}', $klarnaOrderId, $orderManagementUrlTemplate) . '/captures';
+
+        try {
+            $response = $this->client->request(
+                'POST',
+                $captureUrl,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($payload),
+                ],
+            );
+
+            $status = $response->getStatusCode();
+        } catch (GuzzleException $e) {
+            if (str_contains($e->getMessage(), StatusDO::ERROR_CODE_CAPTURE_NOT_ALLOWED)) {
+                $order = $payment->getOrder();
+
+                assert($order instanceof OrderInterface);
+
+                $orderData = $this->fetchOrderDataFromKlarna($order);
+
+                if ($this->isCancelled($orderData)) {
+                    throw new AlreadyCancelledException('Can not capture already cancelled order');
+                }
+
+                $isRefunded = $this->isRefunded($orderData);
+                if ($isRefunded) {
+                    throw new AlreadyRefundedException('Could not capture payment. Payment already refunded!');
+                }
+
+                $isCaptured = $this->isCaptured($orderData);
+                $status = $isCaptured ? StatusDO::PAYMENT_ALREADY_CAPTURED : 400;
+            } else {
+                throw new ApiException('Activation of Klarna payment was not successful: ' . $e->getMessage());
+            }
+        }
+
+        if ($status !== Response::HTTP_CREATED && $status !== Response::HTTP_ACCEPTED) {
+            throw new ApiException('Activation of Klarna payment was not successful');
+        }
+
+        return $status;
+    }
+
+    /**
+     * @throws ApiException
+     * @throws GuzzleException
+     */
+    public function sendRefundRequest(PaymentInterface $payment, array $payload): void
+    {
+        $order = $payment->getOrder();
+        assert($order instanceof OrderInterface);
+
+        $paymentMethod = $payment->getMethod();
+        assert($paymentMethod instanceof PaymentMethodInterface);
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         * @var string $orderManagementUrlTemplate
+         */
+        $orderManagementUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
+        );
+
+        $klarnaOrderId = $this->getKlarnaReference($payment);
+        assert(is_string($klarnaOrderId));
+
+        $refundUrl = str_replace('{order_id}', $klarnaOrderId, $orderManagementUrlTemplate) . '/refunds';
+
+        try {
+            $response = $this->client->request(
+                'POST',
+                $refundUrl,
+                [
+                    'headers' => [
+                        'Authorization' => $this->getBasicAuth($paymentMethod),
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($payload),
+                ],
+            );
+
+            $status = $response->getStatusCode();
+        } catch (RequestException $exception) {
+            $response = $exception->getResponse();
+            if ($response !== null) {
+                $data = json_decode($response->getBody()->getContents(), true);
+
+                assert(is_array($data));
+
+                /** @var string $errorCode */
+                $errorCode = $data['error_code'] ?? 'REFUND_NOT_ALLOWED';
+                if ($errorCode === StatusDO::ERROR_CODE_REFUND_NOT_ALLOWED) {
+                    $orderData = $this->fetchOrderDataFromKlarna($order);
+                    if ($this->isRefunded($orderData)) {
+                        throw new AlreadyRefundedException('Already refunded');
+                    }
+                }
+            }
+
+            throw new ApiException('Refund was not created with Klarna');
+        } catch (GuzzleException $exception) {
+            throw new ApiException('Refund was not created with Klarna');
+        }
+
+        if ($status !== Response::HTTP_CREATED) {
+            throw new ApiException('Refund was not created with Klarna');
+        }
+    }
+
     public function getStatus(array $data): string
     {
         /** @var string $status */
@@ -309,5 +453,30 @@ class OrderManagement implements OrderManagementInterface
     private function hasDiff(array $requestData, array $klarnaData): bool
     {
         return $requestData['order_amount'] !== $klarnaData['order_amount'];
+    }
+
+    private function getBasicAuth(PaymentMethodInterface $method): string
+    {
+        return $this->basicAuthenticationRetriever->getBasicAuthentication($method);
+    }
+
+    private function isCaptured(array $data): bool
+    {
+        /** @var string $orderStatus */
+        $orderStatus = $data['status'] ?? 'Not set';
+
+        if ($orderStatus !== StatusDO::STATUS_CAPTURED) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isRefunded(array $orderData): bool
+    {
+        /** @var int $refundAmount */
+        $refundAmount = $orderData['refunded_amount'];
+
+        return $refundAmount > 0;
     }
 }
