@@ -50,6 +50,14 @@ services:
     north_creation_agency_sylius_klarna_gateway.actions.activate:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\ActivatePayment
         public: true
+        arguments: [
+            '@sylius.tax_rate_resolver',
+            '@sylius.order_processing.shipping_charges_processor',
+            '@parameter_bag',
+            '@sylius.order_number_assigner',
+            '@doctrine.orm.entity_manager',
+            '@SM\Factory\Factory'
+        ]
         
     north_creation_agency_sylius_klarna_gateway.actions.refund:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\RefundAction

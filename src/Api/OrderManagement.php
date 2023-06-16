@@ -75,10 +75,8 @@ class OrderManagement implements OrderManagementInterface
                         $snippet = $this->getCheckoutWidget($klarnaOrderId, $basicAuthString);
 
                         return $snippet;
-                    } else {
-                        $klarnaUri .= '/' . $klarnaOrderId;
                     }
-
+                    $klarnaUri .= '/' . $klarnaOrderId;
                 } catch (RequestException $exception) {
                     $response = $exception->getResponse();
                     if ($response !== null && $response->getStatusCode() !== 404) {
@@ -156,7 +154,6 @@ class OrderManagement implements OrderManagementInterface
             assert(is_array($contents));
 
             $data = $contents;
-
         } catch (GuzzleException $e) {
             $requestStatus = 500;
             $errorMessage = $e->getMessage();
