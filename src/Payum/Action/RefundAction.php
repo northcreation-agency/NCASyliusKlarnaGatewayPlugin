@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action;
 
 use Doctrine\ORM\EntityManagerInterface;
-use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\AlreadyRefundedException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
@@ -26,7 +24,6 @@ use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 class RefundAction implements ActionInterface, ApiAwareInterface
 {
@@ -38,7 +35,7 @@ class RefundAction implements ActionInterface, ApiAwareInterface
         private ParameterBagInterface $parameterBag,
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private EntityManagerInterface $entityManager,
-        private OrderManagementInterface $orderManagement
+        private OrderManagementInterface $orderManagement,
     ) {
         $this->api = null;
     }
