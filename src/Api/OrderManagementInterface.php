@@ -36,5 +36,7 @@ interface OrderManagementInterface
 
     public function canCreateNewCheckoutOrder(array $data): bool;
 
-    public function getKlarnaReference(PaymentInterface $payment): ?string;
+    public function getKlarnaOrderId(PaymentInterface $payment): ?string;
+
+    public function getKlarnaOrderReference(PaymentInterface $payment): ?string;
 }
