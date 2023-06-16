@@ -146,13 +146,20 @@ class OrderVerifier implements OrderVerifierInterface
         /** @var ?array $klarnaCustomerData */
         $klarnaCustomerData = $data['customer'] ?? null;
 
-        if ($klarnaCustomerData !== null && count($klarnaCustomerData) > 0) {
-            $paymentRetriever = new KlarnaPaymentRetriever();
-            $payment = $paymentRetriever->retrieveFromOrder($order);
+        $paymentRetriever = new KlarnaPaymentRetriever();
+        $payment = $paymentRetriever->retrieveFromOrder($order);
 
+        if ($klarnaCustomerData !== null && count($klarnaCustomerData) > 0) {
             if ($payment !== null) {
                 $this->addPaymentDetails($payment, 'customer', $klarnaCustomerData);
             }
+        }
+
+        /** @var ?string $klarnaOrderReference */
+        $klarnaOrderReference = $data['klarna_reference'] ?? null;
+
+        if ($klarnaOrderReference !== null && $payment !== null) {
+            $this->addPaymentDetails($payment, 'klarna_order_reference', $klarnaOrderReference);
         }
     }
 
@@ -180,7 +187,7 @@ class OrderVerifier implements OrderVerifierInterface
         $this->entityManager->persist($address);
     }
 
-    private function addPaymentDetails(PaymentInterface $payment, string $detailsKey, ?array $klarnaCustomerData): void
+    private function addPaymentDetails(PaymentInterface $payment, string $detailsKey, null|array|string $klarnaCustomerData): void
     {
         $details = $payment->getDetails();
 

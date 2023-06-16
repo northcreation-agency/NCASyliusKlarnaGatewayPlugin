@@ -141,7 +141,7 @@ class KlarnaCheckoutController extends AbstractController
             );
         }
 
-        $klarnaOrderId = $this->orderManagement->getKlarnaReference($payment);
+        $klarnaOrderId = $this->orderManagement->getKlarnaOrderId($payment);
         if (is_string($klarnaOrderId)) {
             $this->entityManager->persist($payment);
             $this->entityManager->flush();

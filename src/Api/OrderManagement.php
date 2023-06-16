@@ -14,7 +14,6 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\AlreadyRefundedE
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
-use Sylius\Component\Core\Model\PaymentInterface as SyliusPaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -46,7 +45,7 @@ class OrderManagement implements OrderManagementInterface
          */
         $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
 
-        $klarnaOrderId = $this->getKlarnaReference($payment);
+        $klarnaOrderId = $this->getKlarnaOrderId($payment);
 
         $replaceReference = false;
         if ($klarnaOrderId !== null) {
@@ -105,7 +104,13 @@ class OrderManagement implements OrderManagementInterface
             /** @var string|null $klarnaOrderId */
             $klarnaOrderId = $contents['order_id'] ?? null;
             if (is_string($klarnaOrderId)) {
-                $this->addKlarnaReference($payment, $klarnaOrderId, $replaceReference);
+                $this->addKlarnaOrderId($payment, $klarnaOrderId, $replaceReference);
+            }
+
+            /** @var string|null $klarnaOrderReference */
+            $klarnaOrderReference = $contents['klarna_reference'] ?? null;
+            if (is_string($klarnaOrderReference)) {
+                $this->addKlarnaOrderReference($payment, $klarnaOrderReference, $replaceReference);
             }
 
             /** @var string $snippet */
@@ -257,7 +262,7 @@ class OrderManagement implements OrderManagementInterface
      * @throws ApiException
      * @throws GuzzleException
      */
-    public function sendCaptureRequest(SyliusPaymentInterface $payment, array $payload): int
+    public function sendCaptureRequest(PaymentInterface $payment, array $payload): int
     {
         $paymentMethod = $payment->getMethod();
         assert($paymentMethod instanceof PaymentMethodInterface);
@@ -346,7 +351,7 @@ class OrderManagement implements OrderManagementInterface
             'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
         );
 
-        $klarnaOrderId = $this->getKlarnaReference($payment);
+        $klarnaOrderId = $this->getKlarnaOrderId($payment);
         assert(is_string($klarnaOrderId));
 
         $refundUrl = str_replace('{order_id}', $klarnaOrderId, $orderManagementUrlTemplate) . '/refunds';
@@ -422,7 +427,7 @@ class OrderManagement implements OrderManagementInterface
         return $this->isCancelled($data) && !$hasTransactions;
     }
 
-    public function getKlarnaReference(PaymentInterface $payment): ?string
+    public function getKlarnaOrderId(PaymentInterface $payment): ?string
     {
         $details = $payment->getDetails();
 
@@ -436,12 +441,37 @@ class OrderManagement implements OrderManagementInterface
         return $klarnaOrderId;
     }
 
-    private function addKlarnaReference(PaymentInterface $payment, string $reference, bool $replaceReference = false): void
+    private function addKlarnaOrderId(PaymentInterface $payment, string $reference, bool $replaceReference = false): void
     {
         $details = $payment->getDetails();
 
         if (!array_key_exists('klarna_order_id', $details) || $replaceReference) {
             $details['klarna_order_id'] = $reference;
+        }
+
+        $payment->setDetails($details);
+    }
+
+    public function getKlarnaOrderReference(PaymentInterface $payment): ?string
+    {
+        $details = $payment->getDetails();
+
+        if (!array_key_exists('klarna_order_id', $details)) {
+            return null;
+        }
+
+        /** @var string $klarnaOrderId */
+        $klarnaOrderId = $details['klarna_order_id'];
+
+        return $klarnaOrderId;
+    }
+
+    private function addKlarnaOrderReference(PaymentInterface $payment, string $reference, bool $replaceReference = false): void
+    {
+        $details = $payment->getDetails();
+
+        if (!array_key_exists('klarna_order_reference', $details) || $replaceReference) {
+            $details['klarna_order_reference'] = $reference;
         }
 
         $payment->setDetails($details);
