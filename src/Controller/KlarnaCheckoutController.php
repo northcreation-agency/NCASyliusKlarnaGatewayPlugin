@@ -11,7 +11,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthen
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\KlarnaRequestStructure;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdaterInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
@@ -60,6 +60,7 @@ class KlarnaCheckoutController extends AbstractController
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private PayloadDataResolverInterface $payloadDataResolver,
         private OrderManagementInterface $orderManagement,
+        private DataUpdaterInterface $dataUpdater
     ) {
     }
 
@@ -625,12 +626,17 @@ class KlarnaCheckoutController extends AbstractController
      */
     private function updateCustomer(array $addressData, OrderInterface $order): void
     {
-        $dataUpdater = new DataUpdater();
         $customer = $order->getCustomer();
         assert($customer instanceof CustomerInterface);
-        $customer = $dataUpdater->updateCustomer($addressData, $customer);
+        $updatedCustomer = $this->dataUpdater->updateCustomer($addressData, $customer);
 
-        $this->entityManager->persist($customer);
+        if ($customer->getEmail() !== $updatedCustomer->getEmail()) {
+            $this->entityManager->persist($updatedCustomer);
+            $order->setCustomer($updatedCustomer);
+            $this->entityManager->persist($order);
+        } else {
+            $this->entityManager->persist($customer);
+        }
     }
 
     /**
@@ -638,8 +644,7 @@ class KlarnaCheckoutController extends AbstractController
      */
     private function updateAddress(array $data, AddressInterface $address): void
     {
-        $dataUpdater = new DataUpdater();
-        $address = $dataUpdater->updateAddress($data, $address);
+        $address = $this->dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
     }
