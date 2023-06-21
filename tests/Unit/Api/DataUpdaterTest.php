@@ -9,6 +9,8 @@ use Sylius\Component\Core\Model\Address;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\Customer;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
+use Sylius\Component\Resource\Factory\FactoryInterface;
 
 class DataUpdaterTest extends TestCase
 {
@@ -17,7 +19,16 @@ class DataUpdaterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->dataUpdater = new DataUpdater();
+        $factoryMock = self::createMock(FactoryInterface::class);
+        $factoryMock
+            ->method('createNew')
+            ->willReturn(new Customer());
+
+        $this->dataUpdater = new DataUpdater(
+            self::createMock(CustomerRepositoryInterface::class),
+            $factoryMock
+        );
+
         $this->exampleAddressData = [
             'given_name'=> 'Jane',
             'family_name'=> 'Doe',

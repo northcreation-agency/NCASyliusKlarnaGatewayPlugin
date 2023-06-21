@@ -9,7 +9,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
-use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdater;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdaterInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
@@ -30,6 +30,7 @@ class OrderVerifier implements OrderVerifierInterface
         private ParameterBagInterface $parameterBag,
         private ClientInterface $client,
         private OrderManagementInterface $orderManagement,
+        private DataUpdaterInterface $dataUpdater,
     ) {
     }
 
@@ -127,10 +128,15 @@ class OrderVerifier implements OrderVerifierInterface
         /** @var ?array $billingAddressData */
         $billingAddressData = $data['billing_address'] ?? null;
         if ($billingAddressData !== null) {
-            $this->updateCustomer($billingAddressData, $order);
+            $updatedCustomer = $this->updateCustomer($billingAddressData, $order);
             $billingAddress = $order->getBillingAddress();
             if ($billingAddress !== null) {
                 $this->updateAddress($billingAddressData, $billingAddress);
+            }
+
+            if ($customer->getEmail() !== $updatedCustomer->getEmail()) {
+                $order->setCustomer($updatedCustomer);
+                $this->entityManager->persist($order);
             }
         }
 
@@ -166,14 +172,14 @@ class OrderVerifier implements OrderVerifierInterface
     /**
      * @throws ApiException
      */
-    private function updateCustomer(array $addressData, OrderInterface $order): void
+    private function updateCustomer(array $addressData, OrderInterface $order): CustomerInterface
     {
-        $dataUpdater = new DataUpdater();
         $customer = $order->getCustomer();
         assert($customer instanceof CustomerInterface);
-        $customer = $dataUpdater->updateCustomer($addressData, $customer);
+        $customer = $this->dataUpdater->updateCustomer($addressData, $customer);
 
         $this->entityManager->persist($customer);
+        return $customer;
     }
 
     /**
@@ -181,8 +187,7 @@ class OrderVerifier implements OrderVerifierInterface
      */
     private function updateAddress(array $data, AddressInterface $address): void
     {
-        $dataUpdater = new DataUpdater();
-        $address = $dataUpdater->updateAddress($data, $address);
+        $address = $this->dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
     }

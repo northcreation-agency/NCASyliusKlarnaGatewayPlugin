@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\ClientInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Authentication\BasicAuthenticationRetrieverInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout\PayloadDataResolver;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdaterInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Controller\KlarnaCheckoutController;
 use Payum\Core\Payum;
@@ -42,7 +43,8 @@ class KlarnaCheckoutControllerTest extends \PHPUnit\Framework\TestCase
                 }
             }),
             payloadDataResolver: self::createMock(PayloadDataResolver::class),
-            orderManagement: self::createMock(OrderManagementInterface::class)
+            orderManagement: self::createMock(OrderManagementInterface::class),
+            dataUpdater: self::createMock(DataUpdaterInterface::class),
         );
     }
 

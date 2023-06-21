@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api;
 
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
+use Sylius\Component\Core\Factory\CustomerAfterCheckoutFactory;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
+use Sylius\Component\Resource\Factory\FactoryInterface;
 use Sylius\Component\User\Canonicalizer\Canonicalizer;
 
 class DataUpdater implements DataUpdaterInterface
@@ -29,6 +32,15 @@ class DataUpdater implements DataUpdaterInterface
     ];
 
     /**
+     * @param CustomerRepositoryInterface $customerRepository
+     * @param CustomerAfterCheckoutFactory $customerFactory
+     */
+    public function __construct(
+        private CustomerRepositoryInterface $customerRepository,
+        private FactoryInterface $customerFactory
+    ){}
+
+    /**
      * Updates customer based on address data from Klarna, not customer data.
      *
      * @throws ApiException
@@ -47,18 +59,43 @@ class DataUpdater implements DataUpdaterInterface
             match ($key) {
                 'given_name' => $customer->setFirstName($value),
                 'family_name' => $customer->setLastName($value),
-                'email' => $this->updateCustomerEmail($value, $customer),
                 'phone' => $customer->setPhoneNumber($value),
                 default => $customer
             };
         }
 
-        return $customer;
+        /** @var ?string $email */
+        $email = $addressData['email'] ?? null;
+        if ($email === null) {
+            return $customer;
+        }
+        return $this->updateCustomerByEmail($email, $customer);
     }
 
-    protected function updateCustomerEmail(string $email, CustomerInterface $customer): CustomerInterface
+    protected function updateCustomerByEmail(string $email, CustomerInterface $customer): CustomerInterface
     {
         $canonicalizer = new Canonicalizer();
+
+        $customerOrdersCount = $customer->getOrders()->count();
+
+        if ($customerOrdersCount > 1) {
+            /** @var ?CustomerInterface $otherCustomer */
+            $otherCustomer = $this->customerRepository->findOneBy(['email' => $email]);
+            if ($otherCustomer === null) {
+                /** @var CustomerInterface $otherCustomer */
+                $otherCustomer = $this->customerFactory->createNew();
+                $otherCustomer->setEmail($email);
+                $otherCustomer->setFirstName($customer->getFirstName());
+                $otherCustomer->setLastName($customer->getLastName());
+            }
+
+            $addresses = $customer->getAddresses();
+            foreach ($addresses as $address) {
+                $otherCustomer->addAddress($address);
+            }
+
+            return $otherCustomer;
+        }
 
         $customer->setEmail($email);
         $customer->setEmailCanonical($canonicalizer->canonicalize($email));
