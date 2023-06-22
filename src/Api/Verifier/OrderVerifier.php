@@ -14,7 +14,6 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Retriever\KlarnaPaymentRetriever;
 use Sylius\Component\Core\Model\AddressInterface;
-use Sylius\Component\Core\Model\Customer;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
@@ -31,6 +30,7 @@ class OrderVerifier implements OrderVerifierInterface
         private ClientInterface $client,
         private OrderManagementInterface $orderManagement,
         private DataUpdaterInterface $dataUpdater,
+        private CustomerRepositoryInterface $customerRepository,
     ) {
     }
 
@@ -114,11 +114,8 @@ class OrderVerifier implements OrderVerifierInterface
         assert($customer instanceof CustomerInterface);
 
         if ($email !== null && $email !== $customer->getEmail()) {
-            /** @var CustomerRepositoryInterface $customerRepository */
-            $customerRepository = $this->entityManager->getRepository(Customer::class);
-
             /** @var ?CustomerInterface $customerAlternative */
-            $customerAlternative = $customerRepository->findOneBy(['email' => $email]);
+            $customerAlternative = $this->customerRepository->findOneBy(['email' => $email]);
 
             if ($customerAlternative !== null) {
                 $order->setCustomer($customerAlternative);

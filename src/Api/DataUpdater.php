@@ -76,7 +76,11 @@ class DataUpdater implements DataUpdaterInterface
     {
         $canonicalizer = new Canonicalizer();
 
-        $customerOrdersCount = $customer->getOrders()->count();
+
+        $customerOrdersCount = 0;
+        try {
+            $customerOrdersCount = $customer->getOrders()->count();
+        } catch (\Throwable|\Exception $e){}
 
         if ($customerOrdersCount > 1) {
             /** @var ?CustomerInterface $otherCustomer */
