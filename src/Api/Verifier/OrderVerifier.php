@@ -176,6 +176,7 @@ class OrderVerifier implements OrderVerifierInterface
         $customer = $this->dataUpdater->updateCustomer($addressData, $customer);
 
         $this->entityManager->persist($customer);
+
         return $customer;
     }
 

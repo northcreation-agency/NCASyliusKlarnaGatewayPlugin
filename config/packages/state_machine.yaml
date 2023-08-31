@@ -19,3 +19,10 @@ winzou_state_machine:
                     on: ["ship"]
                     do: ["@north_creation_agency_sylius_klarna_gateway.actions.activate", "activate"]
                     args: ["object.getOrder()"]
+    sylius_order_checkout:
+        callbacks:
+            after:
+                update_address:
+                    on: ["address"]
+                    do: ["@north_creation_agency_sylius_klarna_gateway.actions.update_address", "updateAddress"]
+                    args: ["object"]

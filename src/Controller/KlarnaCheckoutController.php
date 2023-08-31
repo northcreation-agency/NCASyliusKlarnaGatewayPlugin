@@ -60,7 +60,7 @@ class KlarnaCheckoutController extends AbstractController
         private OrderNumberAssignerInterface $orderNumberAssigner,
         private PayloadDataResolverInterface $payloadDataResolver,
         private OrderManagementInterface $orderManagement,
-        private DataUpdaterInterface $dataUpdater
+        private DataUpdaterInterface $dataUpdater,
     ) {
     }
 
