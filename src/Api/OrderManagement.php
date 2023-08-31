@@ -171,6 +171,44 @@ class OrderManagement implements OrderManagementInterface
 
     /**
      * @throws ApiException
+     */
+    public function updateCheckoutAddress(PaymentInterface $payment, array $addressData): void
+    {
+        $paymentMethod = $payment->getMethod();
+        assert($paymentMethod instanceof PaymentMethodInterface);
+        $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($paymentMethod);
+
+        $klarnaOrderId = $this->getKlarnaOrderId($payment);
+
+        if ($klarnaOrderId === null) {
+            throw new ApiException('Klarna order ID not found.');
+        }
+
+        $klarnaUri = $this->parameterBag->get('north_creation_agency_sylius_klarna_gateway.checkout.uri');
+
+        assert(is_string($klarnaUri));
+
+        $klarnaUri = $klarnaUri . '/' . $klarnaOrderId;
+
+        try {
+            $this->client->request(
+                'POST',
+                $klarnaUri,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($addressData),
+                ],
+            );
+        } catch (GuzzleException $exception) {
+            throw new ApiException('Failed to update checkout address.', $exception->getCode(), $exception);
+        }
+    }
+
+    /**
+     * @throws ApiException
      * @throws RequestException
      */
     private function getCheckoutWidget(string $orderId, string $basicAuthString): string

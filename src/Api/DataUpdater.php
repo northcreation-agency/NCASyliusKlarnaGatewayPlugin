@@ -32,13 +32,13 @@ class DataUpdater implements DataUpdaterInterface
     ];
 
     /**
-     * @param CustomerRepositoryInterface $customerRepository
      * @param CustomerAfterCheckoutFactory $customerFactory
      */
     public function __construct(
         private CustomerRepositoryInterface $customerRepository,
-        private FactoryInterface $customerFactory
-    ){}
+        private FactoryInterface $customerFactory,
+    ) {
+    }
 
     /**
      * Updates customer based on address data from Klarna, not customer data.
@@ -69,6 +69,7 @@ class DataUpdater implements DataUpdaterInterface
         if ($email === null) {
             return $customer;
         }
+
         return $this->updateCustomerByEmail($email, $customer);
     }
 
@@ -76,11 +77,12 @@ class DataUpdater implements DataUpdaterInterface
     {
         $canonicalizer = new Canonicalizer();
 
-
         $customerOrdersCount = 0;
+
         try {
             $customerOrdersCount = $customer->getOrders()->count();
-        } catch (\Throwable|\Exception $e){}
+        } catch (\Throwable|\Exception $e) {
+        }
 
         if ($customerOrdersCount > 1) {
             /** @var ?CustomerInterface $otherCustomer */

@@ -26,6 +26,8 @@ interface OrderManagementInterface
 
     public function fetchCheckoutWidget(array $requestData, PaymentInterface &$payment): string;
 
+    public function updateCheckoutAddress(PaymentInterface $payment, array $addressData): void;
+
     public function sendCaptureRequest(PaymentInterface $payment, array $payload): int;
 
     public function sendRefundRequest(PaymentInterface $payment, array $payload): void;
