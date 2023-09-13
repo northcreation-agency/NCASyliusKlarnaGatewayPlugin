@@ -506,4 +506,56 @@ class OrderManagement implements OrderManagementInterface
 
         return $refundAmount > 0;
     }
+
+    /**
+     * Send a request to Klarna to update the webshop reference.
+     */
+    public function updateWebshopReference(PaymentInterface $payment, string $webshopReference): void
+    {
+        $paymentMethod = $payment->getMethod();
+        assert($paymentMethod instanceof PaymentMethodInterface);
+
+        $paymentDetails = $payment->getDetails();
+
+        $order = $payment->getOrder();
+        assert($order instanceof OrderInterface);
+
+        $basicAuthString = $this->getBasicAuth($paymentMethod);
+
+        /** @var ?string $klarnaOrderId */
+        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+        assert($klarnaOrderId !== null);
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         * @var string $orderManagementUrlTemplate
+         */
+        $orderManagementUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.read_order',
+        );
+
+        $endpoint = str_replace(
+            '{order_id}',
+            $klarnaOrderId,
+            $orderManagementUrlTemplate,
+        ) . '/merchant-references';
+
+        // Send the request to Klarna
+        try {
+            $this->client->request(
+                'PATCH',
+                $endpoint,
+                [
+                    'headers' => [
+                        'Authorization' => $basicAuthString,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode([
+                        'merchant_reference1' => $webshopReference,
+                    ]),
+                ],
+            );
+        } catch (GuzzleException $e) {
+            throw new ApiException('Update of webshop reference of Klarna payment was not successful: ' . $e->getMessage());
+        }
+    }
 }

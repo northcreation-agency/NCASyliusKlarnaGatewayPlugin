@@ -39,4 +39,6 @@ interface OrderManagementInterface
     public function getKlarnaOrderId(PaymentInterface $payment): ?string;
 
     public function getKlarnaOrderReference(PaymentInterface $payment): ?string;
+
+    public function updateWebshopReference(PaymentInterface $payment, string $webshopReference): void;
 }
