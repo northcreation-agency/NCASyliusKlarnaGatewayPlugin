@@ -62,6 +62,10 @@ services:
     north_creation_agency_sylius_klarna_gateway.actions.refund:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Payum\Action\RefundAction
         public: true
+        
+    north_creation_agency_sylius_klarna_gateway.actions.update_address:
+        class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\StateMachine\UpdateCheckout
+        public: true
     
     north_creation_agency_sylius_klarna_gateway.api.order_management:
         class: NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagement
