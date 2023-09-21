@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
+use Doctrine\Persistence\ObjectRepository;
+use Sylius\Component\Addressing\Model\ZoneInterface;
+use Sylius\Component\Addressing\Model\ZoneMemberInterface;
+use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Resource\Repository\RepositoryInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 
 class OrderLine extends AbstractLineItem
@@ -15,6 +20,7 @@ class OrderLine extends AbstractLineItem
     public function __construct(
         OrderItemInterface $orderItem,
         TaxRateResolverInterface $taxRateResolver,
+        private ObjectRepository $zoneMemberRepository,
         string $type = 'physical',
         string $locale = 'en_US',
     ) {
@@ -36,7 +42,9 @@ class OrderLine extends AbstractLineItem
         }
 
         // resolve tax rate
-        $taxRate = $taxRateResolver->resolve($variant);
+        $zones = $this->getTaxZonesFromBilling($orderItem);
+        $zoneCriteria = ['zone' => $zones];
+        $taxRate = $taxRateResolver->resolve($variant, $zoneCriteria);
         $taxRateAmount = $taxRate !== null ? (int) ($taxRate->getAmount() * 100 * 100) : 0;
 
         $itemUnitPrice = $orderItem->getUnitPrice();
@@ -61,5 +69,52 @@ class OrderLine extends AbstractLineItem
     public function getLineItem(): LineItemInterface
     {
         return $this;
+    }
+
+    /**
+     * @throws \Exception
+     *
+     * @param OrderItemInterface $item
+     * @return ZoneInterface[]
+     */
+    protected function getTaxZonesFromBilling(OrderItemInterface $item): array
+    {
+        $order = $item->getOrder();
+        if (!$order instanceof OrderInterface) {
+            throw new \Exception('Order item must have an order');
+        }
+        $billingAddress = $order->getBillingAddress();
+        if ($billingAddress === null) {
+            throw new \Exception('Order must have a billing address');
+        }
+
+        $countryCode = $billingAddress->getCountryCode();
+
+
+        return $this->getZonesForCountryCode($countryCode);
+    }
+
+    /**
+     * @throws \Exception
+     *
+     * @return ZoneInterface[]
+     */
+    protected function getZonesForCountryCode(string $countryCode): array
+    {
+        $zoneMembers = $this->zoneMemberRepository->findBy(['code' => $countryCode]);
+        $zones = [];
+        /** @var ZoneMemberInterface $zoneMember */
+        foreach ($zoneMembers as $zoneMember) {
+            $zone = $zoneMember->getBelongsTo();
+            if ($zone !== null) {
+                $zones[] = $zone;
+            }
+        }
+
+        if (count($zones) === 0) {
+            throw new \Exception('Could not find zone for country code ' . $countryCode);
+        }
+
+        return $zones;
     }
 }

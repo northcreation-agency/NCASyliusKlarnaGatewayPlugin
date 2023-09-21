@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Checkout;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\Persistence\ObjectRepository;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
+use Sylius\Component\Addressing\Model\ZoneInterface;
+use Sylius\Component\Addressing\Model\ZoneMemberInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Order\Processor\OrderProcessorInterface;
+use Sylius\Component\Resource\Repository\RepositoryInterface;
 use Sylius\Component\Taxation\Resolver\TaxRateResolverInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -212,12 +217,17 @@ class KlarnaRequestStructure
         $currentLocale = $order->getLocaleCode();
         assert($currentLocale !== null);
 
+        $zoneMemberRepository = $this->entityManager->getRepository(ZoneMemberInterface::class);
+
+        assert($zoneMemberRepository instanceof ObjectRepository);
+
         foreach ($order->getItems() as $item) {
             $orderLines[] = new OrderLine(
-                $item,
-                $this->taxRateResolver,
-                'physical',
-                $currentLocale,
+                orderItem: $item,
+                taxRateResolver: $this->taxRateResolver,
+                zoneMemberRepository: $zoneMemberRepository,
+                type: 'physical',
+                locale: $currentLocale,
             );
         }
 
