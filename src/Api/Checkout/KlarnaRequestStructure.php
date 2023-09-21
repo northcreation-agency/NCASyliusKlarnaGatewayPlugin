@@ -13,11 +13,13 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class KlarnaRequestStructure
 {
+    public const CAPTURE = 'capture';
+
     public const CHECKOUT = 'checkout';
 
     public const REFUND = 'refund';
 
-    public const CAPTURE = 'capture';
+    public const UPDATE = 'update';
 
     public function __construct(
         private OrderInterface $order,

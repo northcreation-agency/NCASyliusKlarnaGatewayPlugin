@@ -596,4 +596,54 @@ class OrderManagement implements OrderManagementInterface
             throw new ApiException('Update of webshop reference of Klarna payment was not successful: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Updates a Klarna order with data from Sylius.
+     */
+    public function updateOrder(OrderInterface $order, array $data): void
+    {
+        $payment = $order->getPayments()->first();
+
+        assert($payment instanceof PaymentInterface);
+
+        $paymentDetails = $payment->getDetails();
+
+        /** @var ?string $klarnaOrderId */
+        $klarnaOrderId = $paymentDetails['klarna_order_id'] ?? null;
+        assert($klarnaOrderId !== null);
+
+        /** @psalm-suppress UndefinedClass (UnitEnum is supported as of PHP 8.1)
+         * @var string $orderManagementUrlTemplate
+         */
+        $orderManagementUrlTemplate = $this->parameterBag->get(
+            'north_creation_agency_sylius_klarna_gateway.checkout.uri',
+        );
+
+        // check if $orderManagementUrlTemplate ends with a slash otherwise add one
+        if (!str_ends_with($orderManagementUrlTemplate, '/')) {
+            $orderManagementUrlTemplate .= '/';
+        }
+
+        $endpoint = $orderManagementUrlTemplate . $klarnaOrderId;
+
+        $method = $payment->getMethod();
+        assert($method instanceof PaymentMethodInterface);
+
+        // Send the request to Klarna
+        try {
+            $this->client->request(
+                'POST',
+                $endpoint,
+                [
+                    'headers' => [
+                        'Authorization' => $this->getBasicAuth($method),
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($data),
+                ],
+            );
+        } catch (GuzzleException $e) {
+            throw new ApiException('Update of Klarna order was not successful: ' . $e->getMessage());
+        }
+    }
 }

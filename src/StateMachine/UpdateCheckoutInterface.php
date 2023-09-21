@@ -9,4 +9,6 @@ use Sylius\Component\Core\Model\OrderInterface;
 interface UpdateCheckoutInterface
 {
     public function updateAddress(OrderInterface $order): void;
+
+    public function updateOrder(OrderInterface $order): void;
 }

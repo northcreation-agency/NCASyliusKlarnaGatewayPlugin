@@ -21,9 +21,11 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use SM\Factory\FactoryInterface;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
+use Sylius\Bundle\PayumBundle\Model\GatewayConfigInterface;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\Payment;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\OrderPaymentStates;
@@ -93,6 +95,41 @@ class KlarnaCheckoutController extends AbstractController
         if (null === $method) {
             return new JsonResponse(['error' => 'Payment method not found'], 404);
         }
+
+        if ($this->isSupportedPaymentMethod($method) === false) {
+            return new JsonResponse(['error' => 'Payment method not supported'], 404);
+        }
+
+        // transition payment to state "processing" if it is not already
+//        $stateMachine = $this->stateMachineFactory->get($payment, PaymentTransitions::GRAPH);
+//        if ($stateMachine->can(PaymentTransitions::TRANSITION_CREATE) === true) {
+//            $stateMachine->apply(PaymentTransitions::TRANSITION_CREATE);
+//            $stateMachine->apply(PaymentTransitions::TRANSITION_PROCESS);
+//        } else if ( $stateMachine->can(PaymentTransitions::TRANSITION_PROCESS) === true) {
+//            $stateMachine->apply(PaymentTransitions::TRANSITION_PROCESS);
+//        } else if ($stateMachine->can(PaymentTransitions::TRANSITION_CANCEL) === true) {
+//            $stateMachine->apply(PaymentTransitions::TRANSITION_CANCEL);
+//
+//
+//            // create new payment similar to current $payment
+//            $newPayment = new Payment();
+//            $newPayment->setMethod($method);
+//            $newPayment->setCurrencyCode($payment->getCurrencyCode());
+//            $newPayment->setAmount($payment->getAmount());
+//            $newPayment->setOrder($payment->getOrder());
+//            $newPayment->setDetails($payment->getDetails());
+//            $newPayment->setState(PaymentInterfaceAlias::STATE_PROCESSING);
+//
+//            $order->removePayment($payment);
+//
+//            $this->entityManager->persist($newPayment);
+//
+//            $this->entityManager->flush();
+//
+//            $payment = $newPayment;
+//        } else {
+//            return new JsonResponse(['error' => 'Payment could not be processed'], 404);
+//        }
 
         $merchantData = $this->payloadDataResolver->getMerchantData($payment);
 
@@ -647,5 +684,16 @@ class KlarnaCheckoutController extends AbstractController
         $address = $this->dataUpdater->updateAddress($data, $address);
 
         $this->entityManager->persist($address);
+    }
+
+    private function isSupportedPaymentMethod(PaymentMethodInterface $paymentMethod): bool
+    {
+        $paymentConfig = $paymentMethod->getGatewayConfig();
+        assert($paymentConfig instanceof GatewayConfigInterface);
+
+        /** @psalm-suppress DeprecatedMethod */
+        $factoryName = $paymentConfig->getFactoryName();
+
+        return str_contains($factoryName, 'klarna_checkout');
     }
 }
