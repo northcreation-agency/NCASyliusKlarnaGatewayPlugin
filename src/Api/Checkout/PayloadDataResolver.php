@@ -28,7 +28,7 @@ class PayloadDataResolver implements PayloadDataResolverInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function getMerchantData(PaymentInterface $payment): ?MerchantData
+    public function getMerchantData(PaymentInterface $payment, ?string $hostUrl = null): ?MerchantData
     {
         $method = $payment->getMethod();
         Assert::isInstanceOf($method, PaymentMethodInterface::class);
@@ -68,6 +68,16 @@ class PayloadDataResolver implements PayloadDataResolverInterface
 
         /** @var string|null $confirmationUrl */
         $confirmationUrl = $headlessMode ? $merchantData['confirmationUrl'] : $confirmationHeadfullUrl;
+
+        // check if confirmationUrl is relative, and if so, prepend hostUrl
+        if (null !== $hostUrl && null !== $confirmationUrl && !str_starts_with($confirmationUrl, 'http')) {
+            $confirmationUrl = $hostUrl . $confirmationUrl;
+
+            // check that there is a slash between hostUrl and confirmationUrl
+            if (!str_starts_with($confirmationUrl, $hostUrl . '/')) {
+                $confirmationUrl = $hostUrl . '/' . $confirmationUrl;
+            }
+        }
 
         if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;

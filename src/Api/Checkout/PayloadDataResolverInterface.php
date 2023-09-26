@@ -14,7 +14,7 @@ interface PayloadDataResolverInterface
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function getMerchantData(PaymentInterface $payment): ?MerchantData;
+    public function getMerchantData(PaymentInterface $payment, string $hostUrl): ?MerchantData;
 
     public function getOptionsData(PaymentInterface $payment): OptionsData;
 

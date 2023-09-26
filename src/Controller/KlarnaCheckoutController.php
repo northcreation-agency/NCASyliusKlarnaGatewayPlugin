@@ -14,6 +14,7 @@ use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Data\StatusDO;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\DataUpdaterInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\Exception\ApiException;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Api\OrderManagementInterface;
+use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Entity\ChannelDomainAwareInterface;
 use NorthCreationAgency\SyliusKlarnaGatewayPlugin\Router\UrlGenerator;
 use Payum\Core\Payum;
 use Payum\Core\Security\TokenInterface;
@@ -100,38 +101,9 @@ class KlarnaCheckoutController extends AbstractController
             return new JsonResponse(['error' => 'Payment method not supported'], 404);
         }
 
-        // transition payment to state "processing" if it is not already
-//        $stateMachine = $this->stateMachineFactory->get($payment, PaymentTransitions::GRAPH);
-//        if ($stateMachine->can(PaymentTransitions::TRANSITION_CREATE) === true) {
-//            $stateMachine->apply(PaymentTransitions::TRANSITION_CREATE);
-//            $stateMachine->apply(PaymentTransitions::TRANSITION_PROCESS);
-//        } else if ( $stateMachine->can(PaymentTransitions::TRANSITION_PROCESS) === true) {
-//            $stateMachine->apply(PaymentTransitions::TRANSITION_PROCESS);
-//        } else if ($stateMachine->can(PaymentTransitions::TRANSITION_CANCEL) === true) {
-//            $stateMachine->apply(PaymentTransitions::TRANSITION_CANCEL);
-//
-//
-//            // create new payment similar to current $payment
-//            $newPayment = new Payment();
-//            $newPayment->setMethod($method);
-//            $newPayment->setCurrencyCode($payment->getCurrencyCode());
-//            $newPayment->setAmount($payment->getAmount());
-//            $newPayment->setOrder($payment->getOrder());
-//            $newPayment->setDetails($payment->getDetails());
-//            $newPayment->setState(PaymentInterfaceAlias::STATE_PROCESSING);
-//
-//            $order->removePayment($payment);
-//
-//            $this->entityManager->persist($newPayment);
-//
-//            $this->entityManager->flush();
-//
-//            $payment = $newPayment;
-//        } else {
-//            return new JsonResponse(['error' => 'Payment could not be processed'], 404);
-//        }
-
-        $merchantData = $this->payloadDataResolver->getMerchantData($payment);
+        $channel = $order->getChannel();
+        $requestHost = $channel instanceof ChannelDomainAwareInterface ? $channel->getDomainHost() : null;
+        $merchantData = $this->payloadDataResolver->getMerchantData($payment, $requestHost);
 
         if (null === $merchantData) {
             return new JsonResponse([
