@@ -69,18 +69,14 @@ class PayloadDataResolver implements PayloadDataResolverInterface
         /** @var string|null $confirmationUrl */
         $confirmationUrl = $headlessMode ? $merchantData['confirmationUrl'] : $confirmationHeadfullUrl;
 
-        // check if confirmationUrl is relative, and if so, prepend hostUrl
-        if (null !== $hostUrl && null !== $confirmationUrl && !str_starts_with($confirmationUrl, 'http')) {
-            $confirmationUrl = $hostUrl . $confirmationUrl;
-
-            // check that there is a slash between hostUrl and confirmationUrl
-            if (!str_starts_with($confirmationUrl, $hostUrl . '/')) {
-                $confirmationUrl = $hostUrl . '/' . $confirmationUrl;
-            }
-        }
-
         if (null === $termsUrl || null === $checkoutUrl || null === $confirmationUrl || null === $pushUrl) {
             return null;
+        }
+
+        if ($hostUrl !== null) {
+            $confirmationUrl = $this->provideFrontendUrlIfRelative($confirmationUrl, $hostUrl);
+            $checkoutUrl = $this->provideFrontendUrlIfRelative($checkoutUrl, $hostUrl);
+            $termsUrl = $this->provideFrontendUrlIfRelative($termsUrl, $hostUrl);
         }
 
         try {
@@ -94,6 +90,22 @@ class PayloadDataResolver implements PayloadDataResolverInterface
         }
 
         return new MerchantData($termsUrl, $checkoutUrl, $confirmationUrl, $pushUrl);
+    }
+
+    protected function provideFrontendUrlIfRelative(string $url, string $hostUrl): string
+    {
+        if (str_starts_with($url, 'http')) {
+            return $url;
+        }
+
+        $url = $hostUrl . $url;
+
+        // check that there is a slash between hostUrl and confirmationUrl
+        if (!str_starts_with($url, $hostUrl . '/')) {
+            $url = $hostUrl . '/' . $url;
+        }
+
+        return $url;
     }
 
     public function getOptionsData(PaymentInterface $payment): OptionsData
