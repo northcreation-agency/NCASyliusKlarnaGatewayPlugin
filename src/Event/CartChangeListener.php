@@ -70,6 +70,16 @@ class CartChangeListener
 
         $changeSetKeys = array_keys($event->getEntityChangeSet());
 
+        $state = $object->getState();
+        if ($state !== \Sylius\Component\Order\Model\OrderInterface::STATE_CART) {
+            return false;
+        }
+
+        $paymentState = $payment->getState();
+        if ($paymentState !== \Sylius\Component\Payment\Model\PaymentInterface::STATE_CART) {
+            return false;
+        }
+
         return count(array_intersect($changeSetKeys, self::SUPPORTED_CART_FIELDS)) > 0;
     }
 
