@@ -21,12 +21,12 @@ use Payum\Core\Security\TokenInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use SM\Factory\FactoryInterface;
+use SM\SMException;
 use Sylius\Bundle\OrderBundle\NumberAssigner\OrderNumberAssignerInterface;
 use Sylius\Bundle\PayumBundle\Model\GatewayConfigInterface;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
-use Sylius\Component\Core\Model\Payment;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Core\OrderPaymentStates;
@@ -397,6 +397,13 @@ class KlarnaCheckoutController extends AbstractController
             ], 404);
         }
 
+        if (!$this->canUpdateState($order, $payment)) {
+            return new JsonResponse([
+                'message' => "Can't process order. Order is in state {$order->getState()}." .
+                    " Payment is in state {$payment->getState()}"
+            ], 500);
+        }
+
         try {
             $basicAuthString = $this->basicAuthenticationRetriever->getBasicAuthentication($method);
 
@@ -415,7 +422,7 @@ class KlarnaCheckoutController extends AbstractController
         }
 
         $status = $response->getStatusCode();
-        if ($status === 204) {
+        if ($status === StatusDO::PAYMENT_CONFIRMED) {
             $paymentState = $payment->getState();
             if ($paymentState !== PaymentInterfaceAlias::STATE_COMPLETED) {
                 $this->updateState($order);
@@ -425,6 +432,17 @@ class KlarnaCheckoutController extends AbstractController
         $this->entityManager->flush();
 
         return new JsonResponse(null, $status);
+    }
+
+    /**
+     * @throws SMException
+     */
+    private function canUpdateState(OrderInterface $order, PaymentInterface $payment): bool
+    {
+        return $this->stateMachineFactory->get($order, OrderPaymentTransitions::GRAPH)
+                ->can(OrderPaymentTransitions::TRANSITION_PAY) &&
+            $this->stateMachineFactory->get($payment, PaymentTransitions::GRAPH)
+                ->can(PaymentTransitions::TRANSITION_COMPLETE);
     }
 
     public function updateState(OrderInterface $order): void
