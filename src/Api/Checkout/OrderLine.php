@@ -62,7 +62,8 @@ class OrderLine extends AbstractLineItem
         $this->taxRate = $taxRateAmount;
         $this->totalAmount = $orderItemTotal;
         $unitDiscount = $itemUnitPrice - $orderItem->getFullDiscountedUnitPrice();
-        $this->totalDiscountAmount = $this->quantity * $unitDiscount;
+        $this->totalDiscountAmount = 0;
+        //$this->totalDiscountAmount = $this->quantity * $unitDiscount;
         $this->totalTaxAmount = $orderItem->getTaxTotal();
     }
 
